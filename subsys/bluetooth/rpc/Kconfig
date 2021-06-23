@@ -4,14 +4,23 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-config SUPPORT_BT_RPC
-	bool
-
 config BT_RPC
 	bool "Bluetooth over RPC"
-	depends on SUPPORT_BT_RPC
+	default y if BT_RPC_STACK
 	select NRF_RPC
 	select NRF_RPC_CBOR
+	depends on BT
+	depends on !BT_ISO_UNICAST
+	depends on !BT_ISO_BROADCAST
+	depends on !BT_MESH
+	depends on !BT_AUDIO
+	depends on !BT_HCI_RAW
+	depends on !BT_DF
+	depends on !BT_OTS
+	depends on !BT_GATT_CLIENT
+	depends on !NET_L2_BT
+	depends on !NET_L2_BT_SHELL
+	depends on !BT_BREDR
 	help
 	  Enables Bluetooth serialization over RPC
 
@@ -19,22 +28,21 @@ if BT_RPC
 
 choice BT_RPC_ROLE_CHOICE
 	prompt "Bluetooth over RPC role selection"
-	default BT_RPC_HOST if SOC_NRF5340_CPUNET
-	default BT_RPC_CLIENT
+	default BT_RPC_CLIENT if BT_RPC_STACK
+	default BT_RPC_HOST
 	help
 	  Select the device role for Bluetooth over RPC. The default role is
 	  a client role.
 
 config BT_RPC_CLIENT
 	bool "Bluetooth over RPC Client"
-	select BT
+	depends on BT_RPC_STACK
 	help
 	  Bluetooth Low Energy API will use nRF RPC library to access host on
 	  the remote core.
 
 config BT_RPC_HOST
 	bool "Bluetooth over RPC Host"
-	select BT
 	help
 	  Bluetooth Low Energy API will use nRF RPC library to provide API for
 	  client on the remote core.
@@ -84,18 +92,9 @@ source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
 
 if BT_RPC_CLIENT
 
-# Overrides the default Bluetooth HCI driver
-choice BT_HCI_BUS_TYPE
-	default BT_NO_DRIVER
-endchoice
-
 config HEAP_MEM_POOL_SIZE
 	default 4096
 
-# Overrides the Bluetooth Controller to disable it
-config BT_CTLR
-	default n
- 
 endif # BT_RPC_CLIENT
 
 if BT_RPC_HOST
@@ -109,3 +108,74 @@ config BT_RPC_GATT_BUFFER_SIZE
 
 endif # BT_RPC_HOST
 endif # BT_RPC
+
+choice BT_STACK_SELECTION
+
+config BT_RPC_STACK
+	bool "Bluetooth over RPC Client"
+	help
+	  Bluetooth serialized stack
+
+endchoice
+
+# BLE configuration copy. It is necessary to keep configuration copy since
+# BLE header files have dependencies to it and original samples or application
+# might use it.
+if BT_RPC_STACK
+
+config BT_CENTRAL
+	bool "Central Role support"
+	select BT_OBSERVER
+	select BT_CONN
+
+config BT_PERIPHERAL
+	bool "Peripheral Role support"
+	select BT_BROADCASTER
+	select BT_CONN
+
+config BT_OBSERVER
+	bool "Observer Role support"
+
+menu "Broadcaster"
+	visible if !BT_PERIPHERAL
+
+config BT_BROADCASTER
+	bool "Broadcaster Role support"
+	default y if !BT_OBSERVER
+	help
+	  Select this for LE Broadcaster role support.
+
+endmenu
+
+config BT_CONN
+	bool
+
+config BT_MAX_CONN
+	int "Maximum number of simultaneous connections"
+	depends on BT_CONN
+	range 1 64
+	default 1
+
+if BT_CONN
+
+config BT_REMOTE_VERSION
+	bool "Enable fetching of remote version"
+	# Enable if building a Controller-only build
+	default y if BT_HCI_RAW
+
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y
+
+endif # BT_CONN
+
+source "$(ZEPHYR_BASE)/subsys/bluetooth/Kconfig.adv"
+source "$(ZEPHYR_BASE)/subsys/bluetooth/services/Kconfig"
+source "$(ZEPHYR_BASE)/subsys/bluetooth/common/Kconfig"
+source "$(ZEPHYR_BASE)/subsys/bluetooth/host/Kconfig"
+
+endif # BT_RPC_STACK
