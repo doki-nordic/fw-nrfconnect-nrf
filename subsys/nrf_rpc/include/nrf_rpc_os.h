@@ -93,6 +93,46 @@ static inline void nrf_rpc_os_remote_release(void)
 	k_sem_give(&_nrf_rpc_os_remote_counter);
 }
 
+#ifdef CONFIG_NRF_RPC_TR_SHMEM
+
+#define NRF_RPC_OS_SHMEM_PTR_CONST 0
+
+extern void *nrf_rpc_os_out_shmem_ptr;
+extern void *nrf_rpc_os_in_shmem_ptr;
+
+#define NRF_RPC_OS_MEMORY_BARIER() __DSB()
+
+void nrf_rpc_os_signal(void);
+void nrf_rpc_os_signal_handler(void (*handler)(void));
+
+typedef atomic_t nrf_rpc_os_atomic_t;
+#define nrf_rpc_os_atomic_or atomic_or
+#define nrf_rpc_os_atomic_and atomic_and
+#define nrf_rpc_os_atomic_get atomic_get
+
+typedef struct k_mutex nrf_rpc_os_mutex_t;
+#define nrf_rpc_os_mutex_init k_mutex_init
+#define nrf_rpc_os_unlock k_mutex_unlock
+static inline void nrf_rpc_os_lock(nrf_rpc_os_mutex_t *mutex) {
+	k_mutex_lock(mutex, K_FOREVER);
+}
+
+typedef struct k_sem nrf_rpc_os_sem_t;
+#define nrf_rpc_os_give k_sem_give
+static inline void nrf_rpc_os_sem_init(nrf_rpc_os_sem_t *sem) {
+	k_sem_init(sem, 0, 1);
+}
+static inline void nrf_rpc_os_take(nrf_rpc_os_sem_t *sem) {
+	k_sem_take(sem, K_FOREVER);
+}
+
+#define nrf_rpc_os_yield k_yield
+#define nrf_rpc_os_fatal k_oops
+#define nrf_rpc_os_clz64 __builtin_clzll
+#define nrf_rpc_os_clz32 __builtin_clz
+
+#endif /* CONFIG_NRF_RPC_TR_SHMEM */
+
 #ifdef __cplusplus
 }
 #endif

@@ -7,6 +7,8 @@
 #define NRF_RPC_LOG_MODULE NRF_RPC_OS
 #include <nrf_rpc_log.h>
 
+#include <nrf_rpc_errno.h>
+
 #include "nrf_rpc_os.h"
 
 /* Maximum number of remote thread that this implementation allows. */
@@ -49,6 +51,8 @@ BUILD_ASSERT(CONFIG_NRF_RPC_CMD_CTX_POOL_SIZE <= 8 * sizeof(atomic_val_t),
 BUILD_ASSERT(sizeof(uint32_t) == sizeof(atomic_val_t),
 	     "Only atomic_val_t is implemented that is the same as uint32_t");
 
+static int shmem_init();
+
 static void thread_pool_entry(void *p1, void *p2, void *p3)
 {
 	struct pool_start_msg msg;
@@ -67,6 +71,11 @@ int nrf_rpc_os_init(nrf_rpc_os_work_t callback)
 	__ASSERT_NO_MSG(callback != NULL);
 
 	thread_pool_callback = callback;
+
+	err = shmem_init();
+	if (err < 0) {
+		return err;
+	}
 
 	err = k_sem_init(&context_reserved, CONFIG_NRF_RPC_CMD_CTX_POOL_SIZE,
 			 CONFIG_NRF_RPC_CMD_CTX_POOL_SIZE);
@@ -168,3 +177,81 @@ void nrf_rpc_os_remote_count(int count)
 		remote_thread_total--;
 	}
 }
+
+
+#ifdef CONFIG_NRF_RPC_TR_SHMEM
+
+#include <drivers/ipm.h>
+
+#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_START_ADDR      (DT_REG_ADDR(SHM_NODE) + 0x400)
+#define SHM_SIZE            (DT_REG_SIZE(SHM_NODE) - 0x400)
+
+void *nrf_rpc_os_out_shmem_ptr;
+void *nrf_rpc_os_in_shmem_ptr;
+
+static void (*signal_handler)(void);
+
+static const struct device *ipm_tx_handle;
+static const struct device *ipm_rx_handle;
+
+void nrf_rpc_os_signal(void)
+{
+	int err = ipm_send(ipm_tx_handle, 0, 0, NULL, 0);
+	if (err != 0) {
+		LOG_ERR("Failed to notify: %d", err);
+	}
+}
+
+void nrf_rpc_os_signal_handler(void (*handler)(void))
+{
+	signal_handler = handler;
+}
+
+static void ipm_callback(const struct device *ipmdev, void *user_data, uint32_t id,
+			 volatile void *data)
+{
+	if (signal_handler != NULL)
+		signal_handler();
+}
+
+static int shmem_init()
+{
+	uint32_t size = (SHM_SIZE / 8) * 4;
+	uint32_t addr1 = SHM_START_ADDR;
+	uint32_t addr2 = SHM_START_ADDR + size;
+	if (IS_ENABLED(CONFIG_NRF_RPC_SHMEM_PRIMARY)) {
+		nrf_rpc_os_out_shmem_ptr = (void*)addr1;
+		nrf_rpc_os_in_shmem_ptr = (void*)addr2;
+	} else {
+		nrf_rpc_os_out_shmem_ptr = (void*)addr2;
+		nrf_rpc_os_in_shmem_ptr = (void*)addr1;
+	}
+
+	/* IPM setup. */
+	ipm_tx_handle = device_get_binding(IS_ENABLED(CONFIG_NRF_RPC_SHMEM_PRIMARY) ?
+					   "IPM_1" : "IPM_0");
+	if (!ipm_tx_handle) {
+		LOG_ERR("Could not get TX IPM device handle");
+		return -NRF_ENODEV;
+	}
+
+	ipm_rx_handle = device_get_binding(IS_ENABLED(CONFIG_NRF_RPC_SHMEM_PRIMARY) ?
+					   "IPM_0" : "IPM_1");
+	if (!ipm_rx_handle) {
+		LOG_ERR("Could not get RX IPM device handle");
+		return -NRF_ENODEV;
+	}
+
+	ipm_register_callback(ipm_rx_handle, ipm_callback, NULL);
+
+	return 0;
+}
+
+#else 
+
+static int shmem_init() {
+	return 0;
+}
+
+#endif /* CONFIG_NRF_RPC_TR_SHMEM */
