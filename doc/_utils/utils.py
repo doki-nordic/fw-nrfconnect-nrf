@@ -37,6 +37,50 @@ def get_docsets(docset: str) -> Dict[str, str]:
     del docsets[docset]
     return docsets
 
+def get_docset(docset: str):
+    """Obtain all docsets that should be displayed.
+
+    Args:
+        docset: Target docset.
+
+    Returns:
+        Dictionary of docsets.
+    """
+    return (ALL_DOCSETS[docset], docset)
+
+def get_docsets_before(docset: str) -> Dict[str, str]:
+    """Obtain all docsets that should be displayed.
+
+    Args:
+        docset: Target docset.
+
+    Returns:
+        Dictionary of docsets.
+    """
+    res = {}
+    for name, value in ALL_DOCSETS.copy().items():
+        if (name == docset):
+            return res
+        res[name] = value
+    raise ValueError("Docset not found")
+
+def get_docsets_after(docset: str) -> Dict[str, str]:
+    """Obtain all docsets that should be displayed.
+
+    Args:
+        docset: Target docset.
+
+    Returns:
+        Dictionary of docsets.
+    """
+    res = None
+    for name, value in ALL_DOCSETS.copy().items():
+        if res is not None:
+            res[name] = value
+        if (name == docset):
+            res = {}
+    return res
+
 
 def get_projdir(docset: str) -> Path:
     """Obtain the project directory for the given docset.
