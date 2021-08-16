@@ -1,28 +1,73 @@
 /* Background colors for the different sets */
+.ncs a { color: #00a9ce; }
 .ncs {
-    background-color: #00a9ce;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #00a9ce;
 }
 
+.zephyr a { color: #a67dfb; }
 .zephyr {
-    background-color: #a67dfb;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #a67dfb;
 }
 
+.mcuboot a { color: #159957; }
 .mcuboot {
-    background-color: #159957;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #159957;
 }
 
+.nrfxlib a { color: #ff9933; }
 .nrfxlib {
-    background-color: #ff9933;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #ff9933;
 }
 
+.nrfx a { color: #0088e2; }
 .nrfx {
-    background-color: #0088e2;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #0088e2;
 }
 
+.kconfig a { color: #e82424; }
 .kconfig {
-    background-color: #e82424;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #e82424;
 }
 
+.tfm a { color: #2980b9; }
 .tfm {
-    background-color: #2980b9;
+    background-color: #eee;
+    font-weight: bold;
+    font-size: 110%;
+    border-top: 1px solid #ccc;
+    border-left: 9px solid #2980b9;
+}
+
+.wy-menu-vertical > ul {
+border-left: 9px solid var(--docset-color);
+}
+
+.rst-other-version > .fa-caret-right,
+.rst-other-version > .fa-caret-down
+{
+    color: #888!important;
 }
