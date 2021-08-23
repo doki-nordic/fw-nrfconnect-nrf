@@ -1,4 +1,12 @@
 
+'''
+TODO before this script can be production-ready:
+ * Reading search index independent from Node.js
+ * Checking integrity of the index after/during loading it: in case format changes in newer version of sphinx
+ * More checking if items are already in the index, so merging the same file twice is not an error
+ * CLI
+'''
+
 import subprocess
 import json
 
