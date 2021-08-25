@@ -47,7 +47,10 @@ def merge_terms(dst, src, key, docnames_offset):
 
             dst[key][term] += refs
         else:
-            dst[key][term] = value
+            if type(value) is list:
+                dst[key][term] = [ x + docnames_offset for x in value ]
+            else:
+                dst[key][term] = value + docnames_offset
 
 def merge_objnames(dst, src):
     objnames_map = {}
