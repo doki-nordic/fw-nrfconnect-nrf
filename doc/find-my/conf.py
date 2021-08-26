@@ -29,7 +29,6 @@ sys.path.insert(0, str(NRF_BASE / "doc" / "_extensions"))
 
 extensions = ["sphinx.ext.intersphinx", "recommonmark", "external_content"]
 source_suffix = [".rst"]
-exclude_patterns = ["**/release-notes-latest.rst"]
 
 # Options for HTML output ------------------------------------------------------
 
