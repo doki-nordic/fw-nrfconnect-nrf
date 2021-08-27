@@ -32,8 +32,12 @@ html_last_updated_fmt = "%b %d, %Y"
 html_show_sourcelink = True
 html_show_sphinx = False
 
-html_theme_options = {"docsets": utils.get_docsets("kconfig")}
-
+html_theme_options = {
+    "docsets": utils.get_docsets("kconfig"),
+    "docsets_before": utils.get_docsets_before("kconfig"),
+    "docsets_after": utils.get_docsets_after("kconfig"),
+    "docset_current": utils.get_docset("kconfig")
+}
 # Options for ncs_cache --------------------------------------------------------
 
 ncs_cache_docset = "kconfig"

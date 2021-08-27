@@ -73,8 +73,12 @@ html_last_updated_fmt = "%b %d, %Y"
 html_show_sourcelink = True
 html_show_sphinx = False
 
-html_theme_options = {"docsets": utils.get_docsets("nrf")}
-
+html_theme_options = {
+    "docsets": utils.get_docsets("nrf"),
+    "docsets_before": utils.get_docsets_before("nrf"),
+    "docsets_after": utils.get_docsets_after("nrf"),
+    "docset_current": utils.get_docset("nrf")
+}
 # Options for intersphinx ------------------------------------------------------
 
 intersphinx_mapping = dict()

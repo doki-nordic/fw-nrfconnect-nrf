@@ -1,6 +1,6 @@
 /* Background colors for the different sets */
-.ncs a { color: #00a9ce; }
-.ncs {
+.nrf a, .ncs a { color: #00a9ce; }
+.nrf, .ncs {
     background-color: #eee;
     font-weight: bold;
     font-size: 110%;

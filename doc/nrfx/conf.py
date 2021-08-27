@@ -29,8 +29,13 @@ extensions.extend(["ncs_cache", "external_content", "doxyrunner"])
 # Options for HTML output ------------------------------------------------------
 
 html_static_path.append(str(NRF_BASE / "doc" / "_static"))
-html_theme_options = {"docsets": utils.get_docsets("nrfx")}
 
+html_theme_options = {
+    "docsets": utils.get_docsets("nrfx"),
+    "docsets_before": utils.get_docsets_before("nrfx"),
+    "docsets_after": utils.get_docsets_after("nrfx"),
+    "docset_current": utils.get_docset("nrfx")
+}
 # -- Options for doxyrunner ----------------------------------------------------
 
 doxyrunner_doxygen = os.environ.get("DOXYGEN_EXECUTABLE", "doxygen")

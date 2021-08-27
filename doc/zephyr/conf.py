@@ -52,8 +52,12 @@ html_context = {
     "is_release": is_release,
 }
 
-html_theme_options = {"docsets": utils.get_docsets("zephyr")}
-
+html_theme_options = {
+    "docsets": utils.get_docsets("zephyr"),
+    "docsets_before": utils.get_docsets_before("zephyr"),
+    "docsets_after": utils.get_docsets_after("zephyr"),
+    "docset_current": utils.get_docset("zephyr")
+}
 # Options for intersphinx ------------------------------------------------------
 
 intersphinx_mapping = dict()
