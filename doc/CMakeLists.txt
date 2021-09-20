@@ -81,7 +81,10 @@ function(add_docset name)
   set(DOCSET_HTML_DIR ${CMAKE_BINARY_DIR}/html/${name})
   set(DOCSET_MAKE_DIRS ${DOCSET_BUILD_DIR};${DOCSET_SRC_DIR})
   set(DOCSET_CLEAN_DIRS ${DOCSET_BUILD_DIR};${DOCSET_HTML_DIR})
-  set(DOCSET_ENV DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE})
+  set(DOCSET_ENV
+    DOXYGEN_EXECUTABLE=${DOXYGEN_EXECUTABLE}
+    ZEPHYR_MODULE_NAMES="${ZEPHYR_MODULE_NAMES}"
+  )
 
   if(NOT ${DOCSET_DODGY})
     set(EXTRA_ARGS ${SPHINXOPTS_EXTRA})
@@ -191,6 +194,14 @@ set(HTML_DIR ${CMAKE_BINARY_DIR}/html)
 file(MAKE_DIRECTORY ${HTML_DIR})
 
 #-------------------------------------------------------------------------------
+# Optional modules
+
+list(FIND ZEPHYR_MODULE_NAMES "find-my" index)
+if(NOT ${index} LESS 0)
+  set(INCLUDE_FIND_MY_DOCSET TRUE)
+endif()
+
+#-------------------------------------------------------------------------------
 # docset: Zephyr
 
 add_custom_target(
@@ -285,6 +296,13 @@ add_docset(matter)
 add_docset(nrfxlib)
 
 #-------------------------------------------------------------------------------
+# docset: find-my
+
+if (${INCLUDE_FIND_MY_DOCSET})
+  add_docset(find-my DODGY)
+endif()
+
+#-------------------------------------------------------------------------------
 # docset: kconfig
 
 add_docset(kconfig)
@@ -317,12 +335,20 @@ add_dependencies(merge-search-indexes
     kconfig-html-all
 )
 
+if (${INCLUDE_FIND_MY_DOCSET})
+  add_dependencies(merge-search-indexes find-my-html-all)
+endif()
+
 add_dependencies(zephyr-html-all kconfig-html-all)
 add_dependencies(mcuboot-html-all kconfig-html-all)
 add_dependencies(nrfxlib-inventory-all kconfig-html-all)
 add_dependencies(nrf-html-all zephyr-html-all nrfxlib-inventory-all mcuboot-html-all matter-html-all kconfig-html-all)
 add_dependencies(nrf-html-all zephyr-html-all nrfxlib-inventory-all mcuboot-html-all tfm-html-all kconfig-html-all)
 add_dependencies(nrfxlib-html-all nrf-html-all)
+
+if (${INCLUDE_FIND_MY_DOCSET})
+  add_dependencies(find-my-html-all nrf-html-all)
+endif()
 
 add_custom_target(build-all ALL)
 add_dependencies(build-all
@@ -338,9 +364,17 @@ add_dependencies(build-all
     kconfig-html-all
 )
 
+if (${INCLUDE_FIND_MY_DOCSET})
+  add_dependencies(build-all find-my-html-all)
+endif()
+
 add_custom_target(linkcheck)
 add_dependencies(linkcheck
     nrf-linkcheck
     nrfxlib-linkcheck
     mcuboot-linkcheck
 )
+
+if (${INCLUDE_FIND_MY_DOCSET})
+  add_dependencies(linkcheck find-my-linkcheck)
+endif()
