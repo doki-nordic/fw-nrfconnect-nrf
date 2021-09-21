@@ -40,6 +40,10 @@ def get_docsets(docset: str) -> Dict[str, Tuple[str, str, str]]:
 
     docsets = ALL_DOCSETS.copy()
 
+    # begin temphack for find-my build
+    docsets = { "find-my" : docsets["find-my"], "kconfig" : docsets["kconfig"] }
+    # end temphack
+
     if "find-my" not in zephyr_modules:
         del docsets["find-my"]
 
