@@ -306,6 +306,8 @@ endif()
 # docset: kconfig
 
 add_docset(kconfig)
+add_dependencies(kconfig-html kconfig-content)
+add_dependencies(kconfig-html-all kconfig-content)
 
 #-------------------------------------------------------------------------------
 # Global targets
