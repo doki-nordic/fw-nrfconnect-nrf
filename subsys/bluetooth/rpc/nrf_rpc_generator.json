@@ -1,0 +1,74 @@
+{
+	"Copyright (c) 2020 Nordic Semiconductor ASA":
+	"SPDX-License-Identifier: LicenseRef-BSD-5-Clause-Nordic",
+	
+	"source-pairs": [
+		{
+			"cli": "client/bt_rpc_gatt_dis_client.c",
+			"host": "host/bt_rpc_gatt_dis_host.c"
+		}
+	],
+	"cmd-id-pattern": "$_RPC_CMD",
+	"evt-id-pattern": "$_RPC_EVT",
+	"indent-size": 8,
+	"indent-string": "\t",
+	"generator": "NrfRpcCborGenerator",
+	"clang-params": "--config ${include-stubs}/conf.txt",
+	"clang-cli-params": "-DCONFIG_BT_RPC_CLIENT=1",
+	"clang-host-params": "-DCONFIG_BT_RPC_HOST=1",
+	"include-stubs": {
+		"conf.txt": [
+			"-include _rpc_defines.h",
+			"-Wno-int-to-pointer-cast",
+			"-Wno-undefined-internal",
+			"-I${include-stubs}",
+			"-Iclient",
+			"-Ihost",
+			"-Icommon",
+			"-I../../nrf_rpc/include",
+			"-I../../../../nrfxlib/nrf_rpc/include",
+			"-I../../../../modules/lib/tinycbor/include",
+			"-I../../../../zephyr/include",
+			"-I../../../../modules/lib/open-amp/open-amp/lib/include",
+			"-I../../../../nrf/samples/bluetooth/rpc_host/build_nrf5340dk_nrf5340_cpunet/zephyr/include/generated",
+			"-I../../../../nrf/samples/nrf_rpc/entropy_nrf53/cpuapp/build_nrf5340pdk_nrf5340_cpuapp/modules/libmetal/libmetal/lib/include"
+		],
+		"_rpc_defines.h": [
+			"#define __GENERATOR",
+			"#define CONFIG_NRF_RPC_TR_RPMSG 1",
+			"#define CONFIG_ARM 1",
+			"#define CONFIG_MP_NUM_CPUS 1",
+			"#define CONFIG_ARMV6_M_ARMV8_M_BASELINE 1",
+			"#define CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC 16000000",
+			"#define CONFIG_SYS_CLOCK_TICKS_PER_SEC 16000000",
+			"#define CONFIG_COOP_ENABLED 1",
+			"#define CONFIG_BT_MAX_CONN 3",
+			"#define CONFIG_BT_USER_PHY_UPDATE 1",
+			"#define CONFIG_BT_USER_DATA_LEN_UPDATE 1",
+			"#define CONFIG_BT_WHITELIST",
+			"#define CONFIG_BT_CENTRAL",
+			"#define CONFIG_BT_SMP",
+			"#define CONFIG_BT_BREDR",
+			"#define CONFIG_BT_REMOTE_INFO",
+			"#define CONFIG_BT_SMP_APP_PAIRING_ACCEPT",
+			"#define CONFIG_BT_DEVICE_NAME_MAX 64",
+			"#define CONFIG_BT_EXT_ADV_MAX_ADV_SET 4",
+			"#define CONFIG_BT_MAX_PAIRED 4",
+			"#define CONFIG_NUM_COOP_PRIORITIES 16",
+			"#define CONFIG_NUM_PREEMPT_PRIORITIES 16"
+		],
+		"logging/log.h": [
+			"#define LOG_MODULE_DECLARE(...)",
+			"#define LOG_MODULE_REGISTER(...)",
+			"#define LOG_ERR(...)",
+			"#define LOG_WRN(...)",
+			"#define LOG_INF(...)",
+			"#define LOG_DBG(...)"
+		],
+		"syscall_list.h": "",
+		"devicetree_unfixed.h": "",
+		"devicetree_fixups.h": "",
+		"kobj-types-enum.h": "",
+		"syscalls/kernel.h": ""
+	}
+}

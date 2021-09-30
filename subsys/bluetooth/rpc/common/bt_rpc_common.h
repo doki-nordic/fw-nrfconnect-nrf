@@ -20,6 +20,10 @@
 
 #include <nrf_rpc_cbor.h>
 
+#ifndef SERIALIZE
+#define SERIALIZE(...)
+#endif
+
 /** @brief Client commands IDs used in bluetooth API serialization.
  *         Those commands are sent from the client to the host.
  */
@@ -117,12 +121,13 @@ enum bt_rpc_cmd_from_cli_to_host {
 	BT_GATT_ATTR_GET_HANDLE_RPC_CMD,
 	BT_GATT_ATTR_VALUE_HANDLE_RPC_CMD,
 	BT_LE_GATT_CB_REGISTER_ON_REMOTE_RPC_CMD,
+	BT_GATT_DISCOVER_RPC_CMD,
 	/* crypto.h API */
 	BT_RAND_RPC_CMD,
 	BT_ENCRYPT_LE_RPC_CMD,
 	BT_ENCRYPT_BE_RPC_CMD,
 	BT_CCM_DECRYPT_RPC_CMD,
-	BT_CCM_ENCRYPT_RPC_CMD
+	BT_CCM_ENCRYPT_RPC_CMD,
 };
 
 /** @brief Host commands IDs used in bluetooth API serialization.
@@ -171,7 +176,8 @@ enum bt_rpc_cmd_from_host_to_cli {
 	BT_GATT_COMPLETE_FUNC_T_CALLBACK_RPC_CMD,
 	BT_GATT_INDICATE_FUNC_T_CALLBACK_RPC_CMD,
 	BT_GATT_INDICATE_PARAMS_DESTROY_T_CALLBACK_RPC_CMD,
-	BT_GATT_CB_ATT_MTU_UPDATE_CALL_RPC_CMD
+	BT_GATT_CB_ATT_MTU_UPDATE_CALL_RPC_CMD,
+	BT_GATT_DISCOVER_CALLBACK_RPC_CMD,
 };
 
 /** @brief Host events IDs used in bluetooth API serialization.

@@ -135,4 +135,8 @@ void bt_rpc_encode_gatt_attr(CborEncoder *encoder, const struct bt_gatt_attr *at
  */
 const struct bt_gatt_attr *bt_rpc_decode_gatt_attr(CborValue *value);
 
+// TODO: cleanup
+typedef void (*bt_gatt_exchange_params_cb)(struct bt_conn *conn, uint8_t err,
+	struct bt_gatt_exchange_params *params);
+
 #endif /* BT_RPC_GATT_COMMON_H_ */
