@@ -16,4 +16,5 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_CONN
   bt_rpc_conn_host.c
   bt_rpc_gatt_svc_host.c
+  bt_rpc_gatt_dis_host.c
 )
