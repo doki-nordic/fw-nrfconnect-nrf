@@ -116,6 +116,7 @@ int bt_enable(bt_ready_cb_t cb)
 				&ctx, ser_rsp_decode_i32, &result);
 
 	if (result) {
+		printk("rpc %d\n", result);
 		return result;
 	}
 
@@ -124,6 +125,7 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	if (result) {
+		printk("bt_rpc_gatt_init %d\n", result);
 		return result;
 	}
 
@@ -132,13 +134,17 @@ int bt_enable(bt_ready_cb_t cb)
 
 		result = settings_subsys_init();
 		if (result) {
+			printk("settings_subsys_init %d\n", result);
 			return result;
 		}
 
 		result = settings_save_one("bt_rpc/network",
 					   &network_load, sizeof(network_load));
+
+		printk("settings_save_one %d\n", result);
 	}
 
+	printk("return %d\n", result);
 	return result;
 }
 

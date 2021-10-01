@@ -69,6 +69,7 @@ static struct bt_gatt_dm_cb discover_all_cb = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+	int dm_err;
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	if (err) {
@@ -79,9 +80,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	printk("Connected %s\n", addr);
 
-	err = bt_gatt_dm_start(conn, NULL, &discover_all_cb, NULL);
-	if (err) {
-		printk("Failed to start discovery (err %d)\n", err);
+	dm_err = bt_gatt_dm_start(conn, NULL, &discover_all_cb, NULL);
+	if (dm_err) {
+		printk("Failed to start discovery (err %d)\n", dm_err);
 	}
 }
 
@@ -191,4 +192,11 @@ void main(void)
 	}
 
 	printk("Advertising successfully started\n");
+}
+
+
+int bt_gatt_discover(struct bt_conn *conn,
+		     struct bt_gatt_discover_params *params)
+{
+	return -ENOENT;
 }
