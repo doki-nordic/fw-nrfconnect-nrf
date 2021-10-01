@@ -40,7 +40,7 @@ static struct bt_uuid *bt_uuid_dec(CborValue *value, struct bt_uuid *uuid)
 	return (struct bt_uuid *)ser_decode_buffer(value, uuid, sizeof(struct bt_uuid_128));
 }
 
-static void bt_uuid_enc(CborEncoder *encoder, struct bt_uuid *uuid)
+static void bt_uuid_enc(CborEncoder *encoder, const struct bt_uuid *uuid)
 {
 	size_t size = 0;
 	if (uuid != NULL) {
@@ -131,7 +131,7 @@ unsupported_exit:
 
 static void bt_gatt_discover_params_dec(CborValue *_value, struct bt_gatt_discover_params *_data)
 {
-	_data->uuid = bt_uuid_dec(_value, _data->uuid);
+	_data->uuid = bt_uuid_dec(_value, (struct bt_uuid *)_data->uuid);
 	_data->func = (bt_gatt_discover_func_t)ser_decode_uint(_value);
 	_data->start_handle = ser_decode_uint(_value);
 	_data->end_handle = ser_decode_uint(_value);
@@ -147,9 +147,9 @@ static void bt_gatt_discover_rpc_handler(CborValue *value, void *_handler_data)
 	container = k_malloc(sizeof(struct bt_gatt_discover_container));
 	if (container == NULL) {
 		ser_decoding_done_and_check(value);
-		goto alloc_error:
+		goto alloc_error;
 	}
-	container->params->uuid = &container->uuid;
+	container->params.uuid = &container->uuid;
 
 	conn = bt_rpc_decode_bt_conn(value);
 	bt_gatt_discover_params_dec(value, &container->params);
