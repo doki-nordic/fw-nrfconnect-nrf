@@ -251,10 +251,3 @@ void main(void)
 
 	printk("Advertising successfully started\n");
 }
-
-
-int bt_gatt_discover(struct bt_conn *conn,
-		     struct bt_gatt_discover_params *params)
-{
-	return -ENOENT;
-}

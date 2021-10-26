@@ -71,7 +71,8 @@ static size_t bt_gatt_discover_params_buf_size(const struct bt_gatt_discover_par
 	return bt_uuid_enc(NULL, _data->uuid) + 5 + 3 * 3;
 }
 
-static void bt_gatt_discover_params_enc(CborEncoder *_encoder, const struct bt_gatt_discover_params *_data)
+static void bt_gatt_discover_params_enc(CborEncoder *_encoder,
+	const struct bt_gatt_discover_params *_data)
 {
 	bt_uuid_enc(_encoder, _data->uuid);
 	ser_encode_uint(_encoder, (uintptr_t)_data->func);
@@ -105,6 +106,7 @@ static void bt_gatt_discover_callback_rpc_handler(CborValue *_value, void *_hand
 	uintptr_t params_pointer;
 	uint8_t result;
 	struct bt_gatt_discover_params *params;
+	struct bt_uuid_16 *attr_uuid_16;
 	union
 	{
 		struct bt_uuid uuid;
@@ -129,15 +131,17 @@ static void bt_gatt_discover_callback_rpc_handler(CborValue *_value, void *_hand
 		ser_decode_skip(_value);
 		attr = NULL;
 	} else {
-		struct bt_uuid_16 *attr_uuid_16 = (struct bt_uuid_16 *)attr->uuid;
 		attr->uuid = bt_uuid_dec(_value, &uuid_buffers[0].uuid);
 		attr->handle = ser_decode_uint(_value);
+		attr_uuid_16 = (struct bt_uuid_16 *)attr->uuid;
 		if (ser_decode_is_null(_value)) {
 			ser_decode_skip(_value);
 			attr->user_data = NULL;
-		} else if (attr->uuid->type != BT_UUID_TYPE_16) {
+		} else if (attr->uuid == NULL || attr->uuid->type != BT_UUID_TYPE_16) {
+			LOG_ERR("Invalid attribute UUID");
 			goto decoding_done_with_error;
-		} else if (attr_uuid_16->val == BT_UUID_GATT_PRIMARY_VAL || attr_uuid_16->val == BT_UUID_GATT_SECONDARY_VAL) {
+		} else if (attr_uuid_16->val == BT_UUID_GATT_PRIMARY_VAL ||
+			   attr_uuid_16->val == BT_UUID_GATT_SECONDARY_VAL) {
 			user_data.service.uuid = bt_uuid_dec(_value, &uuid_buffers[1].uuid);
 			user_data.service.end_handle = ser_decode_uint(_value);
 		} else if (attr_uuid_16->val == BT_UUID_GATT_INCLUDE_VAL) {
@@ -149,6 +153,7 @@ static void bt_gatt_discover_callback_rpc_handler(CborValue *_value, void *_hand
 			user_data.chrc.value_handle = ser_decode_uint(_value);
 			user_data.chrc.properties = ser_decode_uint(_value);
 		} else {
+			LOG_ERR("Unsupported attribute UUID");
 			goto decoding_done_with_error;
 		}
 	}
@@ -162,11 +167,11 @@ static void bt_gatt_discover_callback_rpc_handler(CborValue *_value, void *_hand
 	ser_rsp_send_uint(result);
 
 	return;
+
 decoding_done_with_error:
 	ser_decoding_done_and_check(_value);
 decoding_error:
 	report_decoding_error(BT_GATT_DISCOVER_CALLBACK_RPC_CMD, _handler_data);
-
 }
 
 NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_discover_callback, BT_GATT_DISCOVER_CALLBACK_RPC_CMD,
