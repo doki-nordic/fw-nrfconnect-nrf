@@ -20,8 +20,42 @@
 
 #include <logging/log.h>
 
-
 LOG_MODULE_DECLARE(BT_RPC, CONFIG_BT_RPC_LOG_LEVEL);
+
+#if CONFIG_BT_RPC_LOG_LEVEL >= 4
+
+static size_t total_allocated = 0;
+
+static void *tracked_alloc(size_t size) {
+	size_t *ptr = k_malloc(size + sizeof(size_t));
+	if (ptr == NULL) {
+		LOG_ERR("Out of memory, allocating %d", size);
+		return ptr;
+	}
+	total_allocated += size;
+	*ptr = size;
+	LOG_DBG("ALLOC @0x%08X, size %d, total %d", (unsigned int)ptr, size, total_allocated);
+	return &ptr[1];
+}
+
+static void tracked_free(void* ptr) {
+	size_t *ptr_size;
+	if (ptr == NULL) {
+		LOG_DBG("FREE NULL");
+		return;
+	}
+	ptr_size = ptr;
+	ptr_size--;
+	total_allocated -= *ptr_size;
+	LOG_DBG("FREE   @0x%08X, size %d, total %d", (unsigned int)ptr_size, *ptr_size, total_allocated);
+	k_free(ptr_size);
+}
+
+#define k_malloc tracked_alloc
+#define k_free tracked_free
+
+#endif
+
 
 static void report_decoding_error(uint8_t cmd_evt_id, void *data)
 {
