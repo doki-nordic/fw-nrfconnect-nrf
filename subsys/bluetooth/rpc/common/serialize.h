@@ -292,6 +292,8 @@ void *ser_decode_callback_call(CborValue *value);
  */
 void ser_decoder_invalid(CborValue *value, CborError err);
 
+bool ser_decode_valid(CborValue *value);
+
 /** @brief Signalize that decoding is done. Use this function when you finish decoding of the
  *         received serialized packet.
  *
