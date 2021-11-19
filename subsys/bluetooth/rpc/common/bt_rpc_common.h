@@ -19,6 +19,7 @@
 #include <bluetooth/gatt.h>
 
 #include <nrf_rpc_cbor.h>
+#include <cbkproxy.h>
 
 #ifndef SERIALIZE
 #define SERIALIZE(...)
@@ -183,6 +184,10 @@ enum bt_rpc_cmd_from_host_to_cli {
 	BT_GATT_READ_RPC_CMD,
 	BT_GATT_WRITE_RPC_CMD,
 	BT_GATT_WRITE_WITHOUT_RESPONSE_CB_RPC_CMD,
+	BT_GATT_SUBSCRIBE_RPC_CMD,
+	BT_GATT_RESUBSCRIBE_RPC_CMD,
+	BT_GATT_UNSUBSCRIBE_RPC_CMD,
+	BT_RPC_GATT_SUBSCRIBE_FLAG_UPDATE_RPC_CMD,
 };
 
 /** @brief Host events IDs used in bluetooth API serialization.
@@ -264,5 +269,9 @@ void bt_rpc_encode_bt_conn(CborEncoder *encoder, const struct bt_conn *conn);
  * @retval Connection object.
  */
 struct bt_conn *bt_rpc_decode_bt_conn(CborValue *value);
+
+CBKPROXY_HANDLER_DECL(bt_gatt_complete_func_t_encoder,
+		 (struct bt_conn *conn, void *user_data), (conn, user_data));
+
 
 #endif /* BT_RPC_COMMON_H_ */

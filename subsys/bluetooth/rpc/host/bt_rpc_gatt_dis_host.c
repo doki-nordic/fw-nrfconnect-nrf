@@ -399,26 +399,6 @@ alloc_error:
 NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_write, BT_GATT_WRITE_RPC_CMD,         /*####%BlEa*/
 	bt_gatt_write_rpc_handler, NULL);                                         /*#####@3ew*/
 
-static inline void bt_gatt_complete_func_t_callback(struct bt_conn *conn, void *user_data,
-					  uint32_t callback_slot)
-{
-	SERIALIZE(CALLBACK(bt_gatt_complete_func_t));
-
-	struct nrf_rpc_cbor_ctx _ctx;                                                 /*####%ARzi*/
-	size_t _buffer_size_max = 11;                                                 /*#####@x8o*/
-
-	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                                   /*##AvrU03s*/
-
-	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                                   /*######%A/*/
-	ser_encode_uint(&_ctx.encoder, (uintptr_t)user_data);                         /*######vI3*/
-	ser_encode_callback_call(&_ctx.encoder, callback_slot);                       /*######@sA*/
-
-	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_COMPLETE_FUNC_T_CALLBACK_RPC_CMD,/*####%BIFv*/
-		&_ctx, ser_rsp_decode_void, NULL);                                    /*#####@sqA*/
-}
-
-CBKPROXY_HANDLER(bt_gatt_complete_func_t_encoder, bt_gatt_complete_func_t_callback, (struct bt_conn *conn, void *user_data), (conn, user_data));
-
 static void bt_gatt_write_without_response_cb_rpc_handler(CborValue *_value, void *_handler_data)      /*####%BvNu*/
 {                                                                                                      /*#####@Ubk*/
 
@@ -458,4 +438,231 @@ decoding_error:                                                                 
 
 NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_write_without_response_cb, BT_GATT_WRITE_WITHOUT_RESPONSE_CB_RPC_CMD,/*####%Bs2D*/
 	bt_gatt_write_without_response_cb_rpc_handler, NULL);                                                     /*#####@5AU*/
+
+struct bt_gatt_subscribe_container {
+	struct bt_gatt_subscribe_params params;
+	uintptr_t remote_pointer;
+	sys_snode_t node;
+};
+
+sys_slist_t subscribe_containers = SYS_SLIST_STATIC_INIT(&subscribe_containers);
+
+K_MUTEX_DEFINE(subscribe_containers_mutex);
+
+static struct bt_gatt_subscribe_container *get_subscribe_container(uintptr_t remote_pointer,
+								   bool *create)
+{
+	struct bt_gatt_subscribe_container *container = NULL;
+
+	k_mutex_lock(&subscribe_containers_mutex, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&subscribe_containers, container, node) {
+		if (container->remote_pointer == remote_pointer) {
+			*create = false;
+			goto unlock_and_return;
+		}
+	}
+
+	if (*create) {
+		container = k_malloc(sizeof(struct bt_gatt_subscribe_container));
+		if (container != NULL) {
+			container->remote_pointer = remote_pointer;
+			sys_slist_append(&subscribe_containers, &container->node);
+		}
+	} else {
+		container = NULL;
+	}
+
+unlock_and_return:
+	k_mutex_unlock(&subscribe_containers_mutex);
+	return container;
+}
+
+
+void free_subscribe_container(struct bt_gatt_subscribe_container *container)
+{
+	k_mutex_lock(&subscribe_containers_mutex, K_FOREVER);
+	sys_slist_find_and_remove(&subscribe_containers, &container->node);
+	k_mutex_unlock(&subscribe_containers_mutex);
+	k_free(container);
+}
+
+
+void bt_gatt_subscribe_params_dec(CborValue *_value, struct bt_gatt_subscribe_params *_data)              /*####%BsZ+*/
+{                                                                                                         /*#####@Zf0*/
+	_data->value_handle = ser_decode_uint(_value);                                                    /*#######tU*/
+	_data->ccc_handle = ser_decode_uint(_value);                                                      /*########s*/
+	_data->value = ser_decode_uint(_value);                                                           /*########w*/
+	atomic_set(_data->flags, (atomic_val_t)ser_decode_uint(_value));
+}                                                                                                         /*##B9ELNqo*/
+
+static void bt_gatt_subscribe_rpc_handler(CborValue *_value, void *_handler_data)/*####%Bgbl*/
+{                                                                                /*#####@4r8*/
+
+	struct bt_conn * conn;                                                   /*######%AX*/
+	struct bt_gatt_subscribe_container *container;
+	bool new_container = true;
+	int _result;                                                             /*######@ZA*/
+	uintptr_t remote_pointer;
+
+	conn = bt_rpc_decode_bt_conn(_value);                                    /*####%CuAY*/
+	remote_pointer = ser_decode_uint(_value);
+	container = get_subscribe_container(remote_pointer, &new_container);
+	if (container == NULL) {
+		ser_decoding_done_and_check(_value);
+		goto alloc_error;
+	}
+	bt_gatt_subscribe_params_dec(_value, &container->params);
+
+	if (!ser_decoding_done_and_check(_value)) {                              /*######%FE*/
+		goto decoding_error;                                             /*######QTM*/
+	}                                                                        /*######@1Y*/
+
+	_result = bt_gatt_subscribe(conn, &container->params);                              /*##DtSaIiU*/
+
+	ser_rsp_send_int(_result);                                               /*##BPC96+4*/
+
+	if (_result < 0 && new_container) {
+		free_subscribe_container(container);
+	}
+
+	return;                                                                  /*######%FS*/
+decoding_error:                                                                  /*######6vX*/
+	if (new_container) {
+		free_subscribe_container(container);
+	}
+alloc_error:
+	report_decoding_error(BT_GATT_SUBSCRIBE_RPC_CMD, _handler_data);         /*######@DI*/
+
+}                                                                                /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_subscribe, BT_GATT_SUBSCRIBE_RPC_CMD,/*####%BsIC*/
+	bt_gatt_subscribe_rpc_handler, NULL);                                     /*#####@Ghg*/
+
+static void bt_gatt_resubscribe_rpc_handler(CborValue *_value, void *_handler_data)/*####%BkOL*/
+{                                                                                  /*#####@Xt0*/
+
+	uint8_t id;                                                                /*######%Ad*/
+	bt_addr_le_t _peer_data;                                                   /*#######Qq*/
+	const bt_addr_le_t * peer;                                                 /*#######xp*/
+	int _result;                                                               /*#######@o*/
+	uintptr_t remote_pointer;
+	struct bt_gatt_subscribe_container *container;
+	bool new_container = true;
+
+	id = ser_decode_uint(_value);                                              /*####%CrMZ*/
+	peer = ser_decode_buffer(_value, &_peer_data, sizeof(bt_addr_le_t));       /*#####@6MU*/
+	remote_pointer = ser_decode_uint(_value);
+	container = get_subscribe_container(remote_pointer, &new_container);
+	if (container == NULL) {
+		ser_decoding_done_and_check(_value);
+		goto alloc_error;
+	}
+	bt_gatt_subscribe_params_dec(_value, &container->params);
+
+	if (!ser_decoding_done_and_check(_value)) {                                /*######%FE*/
+		goto decoding_error;                                               /*######QTM*/
+	}                                                                          /*######@1Y*/
+
+	_result = bt_gatt_resubscribe(id, peer, &container->params);                                   /*##DnPy/2A*/
+
+	ser_rsp_send_int(_result);                                                 /*##BPC96+4*/
+
+	if (_result < 0 && new_container) {
+		free_subscribe_container(container);
+	}
+
+	return;                                                                    /*######%Ff*/
+decoding_error:                                                                    /*######cBP*/
+	if (new_container) {
+		free_subscribe_container(container);
+	}
+alloc_error:
+	report_decoding_error(BT_GATT_RESUBSCRIBE_RPC_CMD, _handler_data);         /*######@wk*/
+
+}                                                                                  /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_resubscribe, BT_GATT_RESUBSCRIBE_RPC_CMD,/*####%Bsd0*/
+	bt_gatt_resubscribe_rpc_handler, NULL);                                       /*#####@Gj0*/
+
+static void bt_gatt_unsubscribe_rpc_handler(CborValue *_value, void *_handler_data)/*####%BghS*/
+{                                                                                  /*#####@rHk*/
+
+	struct bt_conn * conn;                                                     /*######%Ac*/
+	int _result;                                                               /*######@CQ*/
+	uintptr_t remote_pointer;
+	struct bt_gatt_subscribe_container *container;
+	bool new_container = false;
+	
+	conn = bt_rpc_decode_bt_conn(_value);                                      /*####%CmfJ*/
+	remote_pointer = ser_decode_uint(_value);                                          /*#####@ETU*/
+
+	if (!ser_decoding_done_and_check(_value)) {                                /*######%FE*/
+		goto decoding_error;                                               /*######QTM*/
+	}                                                                          /*######@1Y*/
+
+	container = get_subscribe_container(remote_pointer, &new_container);
+
+	if (container != NULL) {
+		_result = bt_gatt_unsubscribe(conn, &container->params);                               /*##DorqYnE*/
+		free_subscribe_container(container);
+	} else {
+		_result = -EINVAL;
+	}
+
+	ser_rsp_send_int(_result);                                                 /*##BPC96+4*/
+
+	return;                                                                    /*######%FT*/
+decoding_error:                                                                    /*######mA0*/
+	report_decoding_error(BT_GATT_UNSUBSCRIBE_RPC_CMD, _handler_data);         /*######@IQ*/
+
+}                                                                                  /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_unsubscribe, BT_GATT_UNSUBSCRIBE_RPC_CMD,/*####%Bpx/*/
+	bt_gatt_unsubscribe_rpc_handler, NULL);                                       /*#####@k3Y*/
+
+static void bt_rpc_gatt_subscribe_flag_update_rpc_handler(CborValue *_value, void *_handler_data)/*####%BsDx*/
+{                                                                                             /*#####@n1k*/
+	uint32_t flags_bit;                                                                   /*######h7r*/
+	int _result;                                                                          /*######@xM*/
+	uintptr_t remote_pointer;
+	struct bt_gatt_subscribe_container *container;
+	bool new_container = false;
+	int value;
+
+	remote_pointer = ser_decode_uint(_value);                                                     /*####%CkaJ*/
+	flags_bit = ser_decode_uint(_value);                                                  /*#####@UZ0*/
+	value = ser_decode_int(_value);                                                  /*#####@UZ0*/
+
+	if (!ser_decoding_done_and_check(_value)) {                                           /*######%FE*/
+		goto decoding_error;                                                          /*######QTM*/
+	}                                                                                     /*######@1Y*/
+
+	container = get_subscribe_container(remote_pointer, &new_container);
+	if (container == NULL) {
+		_result = -EINVAL;
+	} else {
+		if (atomic_test_bit(container->params.flags, flags_bit)) {
+			_result = 1;
+		} else {
+			_result = 0;
+		}
+
+		if (value == 0) {
+			atomic_clear_bit(container->params.flags, flags_bit);
+		} else if (value > 0) {
+			atomic_set_bit(container->params.flags, flags_bit);
+		}
+	}
+
+	ser_rsp_send_int(_result);                                                            /*##BPC96+4*/
+
+	return;                                                                               /*######%FT*/
+decoding_error:                                                                               /*######u8s*/
+	report_decoding_error(BT_RPC_GATT_SUBSCRIBE_FLAG_UPDATE_RPC_CMD, _handler_data);         /*######@28*/
+
+}                                                                                             /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_rpc_gatt_subscribe_flag_update, BT_RPC_GATT_SUBSCRIBE_FLAG_UPDATE_RPC_CMD,/*####%Bge0*/
+	bt_rpc_gatt_subscribe_flag_update_rpc_handler, NULL);                                                  /*#####@Rfc*/
 

@@ -32,6 +32,7 @@ SERIALIZE(GROUP(bt_rpc_grp));
 SERIALIZE(OPAQUE_STRUCT(void));
 SERIALIZE(OPAQUE_STRUCT(struct bt_gatt_exchange_params));
 SERIALIZE(FILTERED_STRUCT(struct bt_conn, 3, bt_rpc_encode_bt_conn, bt_rpc_decode_bt_conn));
+SERIALIZE(RAW_STRUCT(bt_addr_le_t));
 
 
 static void report_decoding_error(uint8_t cmd_evt_id, void *data)
@@ -331,35 +332,6 @@ decoding_error:
 NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_write_callback, BT_GATT_WRITE_CALLBACK_RPC_CMD,/*####%Bvya*/
 	bt_gatt_write_callback_rpc_handler, NULL);                                         /*#####@vOM*/
 
-
-static void bt_gatt_complete_func_t_callback_rpc_handler(CborValue *_value, void *_handler_data)/*####%BoX7*/
-{                                                                                               /*#####@SHA*/
-
-	struct bt_conn * conn;                                                                  /*######%Ac*/
-	void * user_data;                                                                       /*######9nB*/
-	bt_gatt_complete_func_t callback_slot;                                                  /*######@Qo*/
-
-	conn = bt_rpc_decode_bt_conn(_value);                                                   /*######%Cs*/
-	user_data = (void *)ser_decode_uint(_value);                                            /*######uWh*/
-	callback_slot = (bt_gatt_complete_func_t)ser_decode_callback_call(_value);              /*######@uE*/
-
-	if (!ser_decoding_done_and_check(_value)) {                                             /*######%FE*/
-		goto decoding_error;                                                            /*######QTM*/
-	}                                                                                       /*######@1Y*/
-
-	callback_slot(conn, user_data);                                                         /*##Dvus85Q*/
-
-	ser_rsp_send_void();                                                                    /*##BEYGLxw*/
-
-	return;                                                                                 /*######%Fd*/
-decoding_error:                                                                                 /*######Mf3*/
-	report_decoding_error(BT_GATT_COMPLETE_FUNC_T_CALLBACK_RPC_CMD, _handler_data);         /*######@xE*/
-
-}                                                                                               /*##B9ELNqo*/
-
-NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_complete_func_t_callback, BT_GATT_COMPLETE_FUNC_T_CALLBACK_RPC_CMD,/*####%BsLA*/
-	bt_gatt_complete_func_t_callback_rpc_handler, NULL);                                                    /*#####@aQ8*/
-
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 				      const void *data, uint16_t length,
 				      bool sign, bt_gatt_complete_func_t func,
@@ -396,9 +368,110 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 	return _result;                                                                /*##BX7TDLc*/
 }
 
+void bt_gatt_subscribe_params_enc(CborEncoder *_encoder, const struct bt_gatt_subscribe_params *_data)/*####%BuGK*/
+{                                                                                                     /*#####@RMY*/
+// 4 * 3 = 12
+	ser_encode_uint(_encoder, _data->value_handle);                                               /*#######nf*/
+	ser_encode_uint(_encoder, _data->ccc_handle);                                                 /*########J*/
+	ser_encode_uint(_encoder, _data->value);                                                      /*########c*/
+	ser_encode_uint(_encoder, (uint16_t)atomic_get(_data->flags));                                                      /*########@*/
+}                                                                                                     /*##B9ELNqo*/
 
 int bt_gatt_subscribe(struct bt_conn *conn,
 		      struct bt_gatt_subscribe_params *params)
 {
-	SERIALIZE();
+	struct nrf_rpc_cbor_ctx _ctx;                                            /*######%AR*/
+	int _result;                                                             /*######PI0*/
+
+	NRF_RPC_CBOR_ALLOC(_ctx, 20);                              /*##AvrU03s*/
+
+	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                              /*####%A/eu*/
+	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);
+	bt_gatt_subscribe_params_enc(&_ctx.encoder, params);                     /*#####@2jk*/
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_SUBSCRIBE_RPC_CMD,          /*####%BAqg*/
+		&_ctx, ser_rsp_decode_i32, &_result);                            /*#####@TjM*/
+
+	return _result;                                                          /*##BX7TDLc*/
 }
+
+int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
+			struct bt_gatt_subscribe_params *params)
+{
+
+	struct nrf_rpc_cbor_ctx _ctx;                                            /*######%Aa*/
+	int _result;                                                             /*######Qso*/
+	size_t _buffer_size_max = 5;                                             /*######@uA*/
+
+	_buffer_size_max += peer ? sizeof(bt_addr_le_t) : 0;                     /*##CKH30f0*/
+
+	_buffer_size_max += 12;
+
+	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                              /*##AvrU03s*/
+
+	ser_encode_uint(&_ctx.encoder, id);                                      /*####%A/jk*/
+	ser_encode_buffer(&_ctx.encoder, peer, sizeof(bt_addr_le_t));            /*#####@Y/k*/
+
+	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);
+	bt_gatt_subscribe_params_enc(&_ctx.encoder, params);
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_RESUBSCRIBE_RPC_CMD,        /*####%BPWZ*/
+		&_ctx, ser_rsp_decode_i32, &_result);                            /*#####@EYA*/
+
+	return _result;                                                          /*##BX7TDLc*/
+}
+
+
+int bt_gatt_unsubscribe(struct bt_conn *conn,
+			struct bt_gatt_subscribe_params *params)
+{
+	struct nrf_rpc_cbor_ctx _ctx;                                            /*######%AZ*/
+	int _result;                                                             /*######I55*/
+	size_t _buffer_size_max = 8;                                             /*######@3E*/
+
+	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                              /*##AvrU03s*/
+
+	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                              /*####%Axv8*/
+	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);                                  /*#####@Wcc*/
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_UNSUBSCRIBE_RPC_CMD,        /*####%BJn2*/
+		&_ctx, ser_rsp_decode_i32, &_result);                            /*#####@Bi8*/
+
+	return _result;                                                          /*##BX7TDLc*/
+}
+
+
+
+static int bt_rpc_gatt_subscribe_flag_update(struct bt_gatt_subscribe_params *params, uint32_t flags_bit, int value)
+{
+	struct nrf_rpc_cbor_ctx _ctx;                                               /*######%Ac*/
+	int _result;                                                                /*######PRx*/
+	size_t _buffer_size_max = 15;                                               /*######@Yo*/
+
+	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                                 /*##AvrU03s*/
+
+	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);                                     /*####%A2Fx*/
+	ser_encode_uint(&_ctx.encoder, flags_bit);                                  /*#####@8qk*/
+	ser_encode_int(&_ctx.encoder, value);                                  /*#####@8qk*/
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_RPC_GATT_SUBSCRIBE_FLAG_UPDATE_RPC_CMD,/*####%BINo*/
+		&_ctx, ser_rsp_decode_i32, &_result);                               /*#####@LHY*/
+
+	return _result;                                                             /*##BX7TDLc*/
+}
+
+int bt_rpc_gatt_subscribe_flag_set(struct bt_gatt_subscribe_params *params, uint32_t flags_bit)
+{
+	return bt_rpc_gatt_subscribe_flag_update(params, flags_bit, 1);
+}
+
+int bt_rpc_gatt_subscribe_flag_clear(struct bt_gatt_subscribe_params *params, uint32_t flags_bit)
+{
+	return bt_rpc_gatt_subscribe_flag_update(params, flags_bit, 0);
+}
+
+int bt_rpc_gatt_subscribe_flag_get(struct bt_gatt_subscribe_params *params, uint32_t flags_bit)
+{
+	return bt_rpc_gatt_subscribe_flag_update(params, flags_bit, -1);
+}
+
