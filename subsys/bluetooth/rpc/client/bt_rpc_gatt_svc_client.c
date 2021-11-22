@@ -857,6 +857,51 @@ uint16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return result;
 }
 
+static void bt_gatt_exchange_mtu_callback_rpc_handler(CborValue *_value, void *_handler_data)/*####%BhJO*/
+{                                                                                    /*#####@mCI*/
+	struct bt_conn *conn;
+	uint8_t err;
+	struct bt_gatt_exchange_params *params;
+
+	conn = bt_rpc_decode_bt_conn(_value);
+	err = ser_decode_uint(_value);
+	params = (struct bt_gatt_exchange_params *)ser_decode_uint(_value);
+
+	if (!ser_decoding_done_and_check(_value)) {
+		goto decoding_error;
+	}
+
+	params->func(conn, err, params);
+
+	ser_rsp_send_void();
+
+	return;
+
+decoding_error:
+	report_decoding_error(BT_GATT_EXCHANGE_MTU_CALLBACK_RPC_CMD, _handler_data);
+
+}                                                                                    /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_exchange_mtu_callback, BT_GATT_EXCHANGE_MTU_CALLBACK_RPC_CMD,/*####%Bvya*/
+	bt_gatt_exchange_mtu_callback_rpc_handler, NULL);                                         /*#####@vOM*/
+
+int bt_gatt_exchange_mtu(struct bt_conn *conn,
+			 struct bt_gatt_exchange_params *params)
+{
+	struct nrf_rpc_cbor_ctx _ctx;                                            /*######%AR*/
+	int _result;                                                             /*######RDP*/
+
+	NRF_RPC_CBOR_ALLOC(_ctx, 8);
+
+	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                              /*####%A6Js*/
+	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_EXCHANGE_MTU_RPC_CMD,               /*####%BJ5t*/
+		&_ctx, ser_rsp_decode_i32, &_result);                            /*#####@OCM*/
+
+	return _result;                                                          /*##BX7TDLc*/
+}
+
 static uint8_t find_next(const struct bt_gatt_attr *attr, uint16_t handle,
 			 void *user_data)
 {
