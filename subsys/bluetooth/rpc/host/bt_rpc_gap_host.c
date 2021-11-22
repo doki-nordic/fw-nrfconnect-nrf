@@ -1973,10 +1973,10 @@ NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_le_per_adv_sync_cb_register_on_remote,
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC) */
 
 #if defined(CONFIG_SETTINGS)
-static void bt_rpc_settings_load_rpc_handler(CborValue *_value,
-					     void *_handler_data)
+static void bt_rpc_settings_load_rpc_handler(CborValue *value,
+					     void *handler_data)
 {
-	nrf_rpc_cbor_decoding_done(_value);
+	nrf_rpc_cbor_decoding_done(value);
 
 	settings_load();
 	ser_rsp_send_void();

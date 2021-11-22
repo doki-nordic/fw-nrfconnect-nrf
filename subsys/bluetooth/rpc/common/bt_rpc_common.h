@@ -21,10 +21,6 @@
 #include <nrf_rpc_cbor.h>
 #include <cbkproxy.h>
 
-#ifndef SERIALIZE
-#define SERIALIZE(...)
-#endif
-
 /** @brief Client commands IDs used in bluetooth API serialization.
  *         Those commands are sent from the client to the host.
  */

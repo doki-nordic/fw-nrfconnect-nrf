@@ -879,60 +879,60 @@ void bt_gatt_exchange_mtu_callback(struct bt_conn *conn, uint8_t err,
 		     struct bt_gatt_exchange_params *params)
 {
 	struct bt_gatt_exchange_mtu_container* container;
-	struct nrf_rpc_cbor_ctx _ctx;
+	struct nrf_rpc_cbor_ctx ctx;
 
 	container = CONTAINER_OF(params, struct bt_gatt_exchange_mtu_container, params);
 
-	NRF_RPC_CBOR_ALLOC(_ctx, 3 + 2 + 5);
+	NRF_RPC_CBOR_ALLOC(ctx, 3 + 2 + 5);
 
-	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);
-	ser_encode_uint(&_ctx.encoder, err);
-	ser_encode_uint(&_ctx.encoder, container->remote_pointer);
+	bt_rpc_encode_bt_conn(&ctx.encoder, conn);
+	ser_encode_uint(&ctx.encoder, err);
+	ser_encode_uint(&ctx.encoder, container->remote_pointer);
 
 	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_EXCHANGE_MTU_CALLBACK_RPC_CMD,
-		&_ctx, ser_rsp_decode_void, NULL);
+		&ctx, ser_rsp_decode_void, NULL);
 
 	k_free(container);
 }
-static void bt_gatt_exchange_mtu_rpc_handler(CborValue *_value, void *_handler_data)     /*####%BpLH*/
-{                                                                                /*#####@IVE*/
+static void bt_gatt_exchange_mtu_rpc_handler(CborValue *value, void *_handler_data)
+{
 
-	struct bt_conn * conn;                                                   /*######%Ab*/
+	struct bt_conn *conn;
 	struct bt_gatt_exchange_mtu_container* container;
-	int _result;                                                             /*######@cI*/
+	int result;
 
-	conn = bt_rpc_decode_bt_conn(_value);                                    /*####%CtNb*/
+	conn = bt_rpc_decode_bt_conn(value);
 	container = k_malloc(sizeof(struct bt_gatt_exchange_mtu_container));
 	if (container == NULL) {
-		ser_decoding_done_and_check(_value);
+		ser_decoding_done_and_check(value);
 		goto alloc_error;
 	}
-	container->remote_pointer = ser_decode_uint(_value);
+	container->remote_pointer = ser_decode_uint(value);
 	container->params.func = bt_gatt_exchange_mtu_callback;
 
-	if (!ser_decoding_done_and_check(_value)) {                              /*######%FE*/
-		goto decoding_error;                                             /*######QTM*/
-	}                                                                        /*######@1Y*/
+	if (!ser_decoding_done_and_check(value)) {
+		goto decoding_error;
+	}
 
-	_result = bt_gatt_exchange_mtu(conn, &container->params);                                   /*##DlVxcOc*/
+	result = bt_gatt_exchange_mtu(conn, &container->params);
 
-	if (_result < 0) {
+	if (result < 0) {
 		k_free(container);
 	}
 
-	ser_rsp_send_int(_result);                                               /*##BPC96+4*/
+	ser_rsp_send_int(result);
 
-	return;                                                                  /*######%FV*/
+	return;
 
 decoding_error:
 	k_free(container);
 alloc_error:
-	report_decoding_error(BT_GATT_EXCHANGE_MTU_RPC_CMD, _handler_data);              /*######@LQ*/
+	report_decoding_error(BT_GATT_EXCHANGE_MTU_RPC_CMD, _handler_data);
 
-}                                                                                /*##B9ELNqo*/
+}
 
-NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_exchange_mtu, BT_GATT_EXCHANGE_MTU_RPC_CMD,         /*####%BlEa*/
-	bt_gatt_exchange_mtu_rpc_handler, NULL);                                         /*#####@3ew*/
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_exchange_mtu, BT_GATT_EXCHANGE_MTU_RPC_CMD,
+	bt_gatt_exchange_mtu_rpc_handler, NULL);
 
 static void bt_gatt_attr_get_handle_rpc_handler(CborValue *value, void *handler_data)
 {
