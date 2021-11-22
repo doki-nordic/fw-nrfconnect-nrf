@@ -14,6 +14,7 @@
 #include <nrf_rpc_cbor.h>
 
 #include "bt_rpc_gatt_svc_client.h"
+#include "bt_rpc_conn_client.h"
 #include "bt_rpc_common.h"
 #include "serialize.h"
 #include "cbkproxy.h"
@@ -121,6 +122,7 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		bt_rpc_conn_init();
 		result = bt_rpc_gatt_init();
 	}
 

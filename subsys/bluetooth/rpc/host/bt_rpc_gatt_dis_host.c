@@ -34,11 +34,28 @@ static void *tracked_alloc(size_t size) {
 	size_t *ptr = k_malloc(size + sizeof(size_t));
 	if (ptr == NULL) {
 		LOG_ERR("Out of memory, allocating %d", size);
+		printk("Out of memory, allocating %d\n", size);
 		return ptr;
 	}
 	total_allocated += size;
 	*ptr = size;
 	LOG_DBG("ALLOC @0x%08X, size %d, total %d", (unsigned int)ptr, size, total_allocated);
+	printk("ALLOC @0x%08X, size %d, total %d\n", (unsigned int)ptr, size, total_allocated);
+	return &ptr[1];
+}
+
+static void *tracked_calloc(size_t size, size_t num) {
+	size *= num;
+	size_t *ptr = k_calloc(1, size + sizeof(size_t));
+	if (ptr == NULL) {
+		LOG_ERR("Out of memory, allocating %d", size);
+		printk("Out of memory, allocating %d\n", size);
+		return ptr;
+	}
+	total_allocated += size;
+	*ptr = size;
+	LOG_DBG("CALLOC @0x%08X, size %d, total %d", (unsigned int)ptr, size, total_allocated);
+	printk("CALLOC @0x%08X, size %d, total %d\n", (unsigned int)ptr, size, total_allocated);
 	return &ptr[1];
 }
 
@@ -52,9 +69,11 @@ static void tracked_free(void* ptr) {
 	ptr_size--;
 	total_allocated -= *ptr_size;
 	LOG_DBG("FREE   @0x%08X, size %d, total %d", (unsigned int)ptr_size, *ptr_size, total_allocated);
+	printk("FREE   @0x%08X, size %d, total %d\n", (unsigned int)ptr_size, *ptr_size, total_allocated);
 	k_free(ptr_size);
 }
 
+#define k_calloc tracked_calloc
 #define k_malloc tracked_alloc
 #define k_free tracked_free
 
@@ -464,7 +483,7 @@ static struct bt_gatt_subscribe_container *get_subscribe_container(uintptr_t rem
 	}
 
 	if (*create) {
-		container = k_malloc(sizeof(struct bt_gatt_subscribe_container));
+		container = k_calloc(1, sizeof(struct bt_gatt_subscribe_container));
 		if (container != NULL) {
 			container->remote_pointer = remote_pointer;
 			sys_slist_append(&subscribe_containers, &container->node);
@@ -487,9 +506,87 @@ void free_subscribe_container(struct bt_gatt_subscribe_container *container)
 	k_free(container);
 }
 
+static uint8_t bt_gatt_subscribe_params_notify(struct bt_conn *conn,
+				      struct bt_gatt_subscribe_params *params,
+				      const void *data, uint16_t length)
+{
+	printk("------NOTIFY %p - %d   %p\n", params, length, data);
+
+	struct nrf_rpc_cbor_ctx _ctx;                                                /*#######%A*/
+	size_t _data_size;                                                           /*#######Th*/
+	uint8_t _result;                                                             /*#######jm*/
+	size_t _scratchpad_size = 0;                                                 /*#######UQ*/
+	size_t _buffer_size_max = 21;                                                /*########@*/
+	struct bt_gatt_subscribe_container *container;
+
+	container = CONTAINER_OF(params, struct bt_gatt_subscribe_container, params);
+
+	_data_size = sizeof(uint8_t) * length;                                       /*####%CFnV*/
+	_buffer_size_max += _data_size;                                              /*#####@o9g*/
+
+	_scratchpad_size += SCRATCHPAD_ALIGN(_data_size);                            /*##EImeShE*/
+
+	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                                  /*####%AoDN*/
+	ser_encode_uint(&_ctx.encoder, _scratchpad_size);                            /*#####@BNc*/
+
+	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                                  /*######%A4*/
+	ser_encode_uint(&_ctx.encoder, container->remote_pointer);                                      /*#######yr*/
+	ser_encode_buffer(&_ctx.encoder, data, _data_size);                          /*#######@E*/
+
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_SUBSCRIBE_PARAMS_NOTIFY_RPC_CMD,/*####%BN2V*/
+		&_ctx, ser_rsp_decode_u8, &_result);                                 /*#####@mEA*/
+
+	return _result;                                                              /*##BX7TDLc*/
+}
+
+static inline void bt_gatt_subscribe_params_write(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params,
+						    uint32_t callback_slot)
+{
+	printk("------WRITE %p %d %p %d\n", conn, err, params, callback_slot);
+	struct nrf_rpc_cbor_ctx _ctx;                                               /*######%AU*/
+	size_t _params_size;                                                        /*#######QP*/
+	size_t _scratchpad_size = 0;                                                /*#######4L*/
+	size_t _buffer_size_max = 26;                                               /*#######@M*/
+
+	if (params != NULL) {
+		_params_size = sizeof(uint8_t) * params->length;                             /*####%CJK7*/
+		_buffer_size_max += _params_size;                                           /*#####@Yjk*/
+		_scratchpad_size += SCRATCHPAD_ALIGN(_params_size);                         /*##EGWNEUQ*/
+	}
+
+	printk("# %d\n", _buffer_size_max);
+
+	NRF_RPC_CBOR_ALLOC(_ctx, _buffer_size_max);                                 /*####%AoDN*/
+	printk("#\n");
+	ser_encode_uint(&_ctx.encoder, _scratchpad_size);                           /*#####@BNc*/
+
+	printk("#\n");
+	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                                 /*######%A3*/
+	printk("#\n");
+	ser_encode_uint(&_ctx.encoder, err);                                        /*#######5d*/
+	printk("#\n");
+	if (params != NULL) {
+		ser_encode_uint(&_ctx.encoder, params->handle);                                      /*######@uQ*/
+		ser_encode_uint(&_ctx.encoder, params->offset);                                      /*######@uQ*/
+		ser_encode_buffer(&_ctx.encoder, params->data, params->length);                                      /*######@uQ*/
+	} else {
+		ser_encode_null(&_ctx.encoder);
+	}
+	printk("#\n");
+	ser_encode_uint(&_ctx.encoder, callback_slot);                                      /*######@uQ*/
+
+	printk("------SEND\n");
+	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_SUBSCRIBE_PARAMS_WRITE_RPC_CMD,/*####%BFre*/
+		&_ctx, ser_rsp_decode_void, NULL);                                  /*#####@zdo*/
+}
+
+CBKPROXY_HANDLER(bt_gatt_subscribe_params_write_encoder, bt_gatt_subscribe_params_write,
+		 (struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params), (conn, err, params));
 
 void bt_gatt_subscribe_params_dec(CborValue *_value, struct bt_gatt_subscribe_params *_data)              /*####%BsZ+*/
 {                                                                                                         /*#####@Zf0*/
+	_data->notify = ser_decode_bool(_value) ? bt_gatt_subscribe_params_notify : NULL;
+	_data->write = (bt_gatt_write_func_t)ser_decode_callback(_value, bt_gatt_subscribe_params_write_encoder);  /*########U*/
 	_data->value_handle = ser_decode_uint(_value);                                                    /*#######tU*/
 	_data->ccc_handle = ser_decode_uint(_value);                                                      /*########s*/
 	_data->value = ser_decode_uint(_value);                                                           /*########w*/
@@ -517,6 +614,12 @@ static void bt_gatt_subscribe_rpc_handler(CborValue *_value, void *_handler_data
 	if (!ser_decoding_done_and_check(_value)) {                              /*######%FE*/
 		goto decoding_error;                                             /*######QTM*/
 	}                                                                        /*######@1Y*/
+	printk("+ notify       %p\n", container->params.notify);
+	printk("+ write        %p\n", container->params.write);
+	printk("+ value_handle %d\n", container->params.value_handle);
+	printk("+ ccc_handle   %d\n", container->params.ccc_handle);
+	printk("+ value        %d\n", container->params.value);
+	printk("+ flags        %x\n", (uint32_t)atomic_get(container->params.flags));
 
 	_result = bt_gatt_subscribe(conn, &container->params);                              /*##DtSaIiU*/
 

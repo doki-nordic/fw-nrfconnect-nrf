@@ -370,7 +370,9 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
 
 void bt_gatt_subscribe_params_enc(CborEncoder *_encoder, const struct bt_gatt_subscribe_params *_data)/*####%BuGK*/
 {                                                                                                     /*#####@RMY*/
-// 4 * 3 = 12
+// 1 + 5 + 3 * 4 = 18
+	ser_encode_bool(_encoder, _data->notify != NULL);                                               /*#######nf*/
+	ser_encode_callback(_encoder, _data->write);
 	ser_encode_uint(_encoder, _data->value_handle);                                               /*#######nf*/
 	ser_encode_uint(_encoder, _data->ccc_handle);                                                 /*########J*/
 	ser_encode_uint(_encoder, _data->value);                                                      /*########c*/
@@ -383,7 +385,14 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	struct nrf_rpc_cbor_ctx _ctx;                                            /*######%AR*/
 	int _result;                                                             /*######PI0*/
 
-	NRF_RPC_CBOR_ALLOC(_ctx, 20);                              /*##AvrU03s*/
+	NRF_RPC_CBOR_ALLOC(_ctx, 26);                              /*##AvrU03s*/
+
+	printk("+ notify       %p\n", params->notify);
+	printk("+ write        %p\n", params->write);
+	printk("+ value_handle %d\n", params->value_handle);
+	printk("+ ccc_handle   %d\n", params->ccc_handle);
+	printk("+ value        %d\n", params->value);
+	printk("+ flags        %x\n", (uint32_t)atomic_get(params->flags));
 
 	bt_rpc_encode_bt_conn(&_ctx.encoder, conn);                              /*####%A/eu*/
 	ser_encode_uint(&_ctx.encoder, (uintptr_t)params);
@@ -475,3 +484,82 @@ int bt_rpc_gatt_subscribe_flag_get(struct bt_gatt_subscribe_params *params, uint
 	return bt_rpc_gatt_subscribe_flag_update(params, flags_bit, -1);
 }
 
+static void bt_gatt_subscribe_params_notify_rpc_handler(CborValue *_value, void *_handler_data)/*####%BlE+*/
+{                                                                                              /*#####@weo*/
+
+	struct bt_conn * conn;                                                                 /*#######%A*/
+	struct bt_gatt_subscribe_params * params;                                                                      /*#######dw*/
+	uint16_t length;                                                                       /*#######3j*/
+	uint8_t* data;                                                                         /*########0*/
+	uint8_t _result = BT_GATT_ITER_CONTINUE;                                                                       /*########o*/
+	struct ser_scratchpad _scratchpad;                                                     /*########@*/
+
+	SER_SCRATCHPAD_DECLARE(&_scratchpad, _value);                                          /*##EdQL8vs*/
+
+	conn = bt_rpc_decode_bt_conn(_value);                                                  /*######%Cu*/
+	params = (struct bt_gatt_subscribe_params *)ser_decode_uint(_value);                                                      /*#######Ya*/
+	length = ser_decode_buffer_size(_value);                                                      /*#######RL*/
+	data = ser_decode_buffer_into_scratchpad(&_scratchpad);                                /*#######@8*/
+
+	if (!ser_decoding_done_and_check(_value)) {                                            /*######%FE*/
+		goto decoding_error;                                                           /*######QTM*/
+	}                                                                                      /*######@1Y*/
+
+	if (params->notify != NULL) {
+		_result = params->notify(conn, params, data, length);
+	}
+
+	ser_rsp_send_uint(_result);                                                            /*##BJsBF7s*/
+
+	return;                                                                                /*######%FQ*/
+decoding_error:                                                                                /*######azw*/
+	report_decoding_error(BT_GATT_SUBSCRIBE_PARAMS_NOTIFY_RPC_CMD, _handler_data);         /*######@DY*/
+
+}                                                                                              /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_subscribe_params_notify, BT_GATT_SUBSCRIBE_PARAMS_NOTIFY_RPC_CMD,/*####%Brc/*/
+	bt_gatt_subscribe_params_notify_rpc_handler, NULL);                                                   /*#####@rQk*/
+
+static void bt_gatt_subscribe_params_write_rpc_handler(CborValue *_value, void *_handler_data)/*####%Bszq*/
+{                                                                                             /*#####@UGQ*/
+
+	struct bt_conn * conn;                                                                /*#######%A*/
+	uint8_t err;                                                                          /*#######SM*/
+	struct bt_gatt_write_params params;                                                                      /*#######Bk*/
+	struct bt_gatt_write_params *params_ptr;                                                                      /*#######Bk*/
+	struct ser_scratchpad _scratchpad;                                                    /*########@*/
+	bt_gatt_write_func_t func;
+
+	SER_SCRATCHPAD_DECLARE(&_scratchpad, _value);                                         /*##EdQL8vs*/
+
+	conn = bt_rpc_decode_bt_conn(_value);                                                 /*######%Cj*/
+	err = ser_decode_uint(_value);                                                        /*#######XC*/
+	if (ser_decode_is_null(_value)) {
+		ser_decode_skip(_value);
+		params_ptr = NULL;
+	} else {
+		params.handle = ser_decode_uint(_value);                                      /*######@uQ*/
+		params.offset = ser_decode_uint(_value);                                      /*######@uQ*/
+		params.length = ser_decode_buffer_size(_value);                                              /*#######/4*/
+		params.data = ser_decode_buffer_into_scratchpad(&_scratchpad);                             /*#######@Q*/
+		params_ptr = &params;
+	}
+	func = (bt_gatt_write_func_t)ser_decode_callback_call(_value);
+
+	if (!ser_decoding_done_and_check(_value)) {                                           /*######%FE*/
+		goto decoding_error;                                                          /*######QTM*/
+	}                                                                                     /*######@1Y*/
+
+	if (func != NULL) {
+		func(conn, err, params_ptr);
+	}
+	ser_rsp_send_void();                                                                  /*##BEYGLxw*/
+
+	return;                                                                               /*######%FY*/
+decoding_error:                                                                               /*######pjM*/
+	report_decoding_error(BT_GATT_SUBSCRIBE_PARAMS_WRITE_RPC_CMD, _handler_data);         /*######@F0*/
+
+}                                                                                             /*##B9ELNqo*/
+
+NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_subscribe_params_write, BT_GATT_SUBSCRIBE_PARAMS_WRITE_RPC_CMD,/*####%Bk3r*/
+	bt_gatt_subscribe_params_write_rpc_handler, NULL);                                                  /*#####@V2E*/

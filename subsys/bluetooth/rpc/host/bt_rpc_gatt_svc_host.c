@@ -895,31 +895,6 @@ decoding_error:
 NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_attr_get_handle, BT_GATT_ATTR_GET_HANDLE_RPC_CMD,
 			 bt_gatt_attr_get_handle_rpc_handler, NULL);
 
-static void bt_gatt_attr_value_handle_rpc_handler(CborValue *value, void *handler_data)
-{
-
-	const struct bt_gatt_attr *attr;
-	uint16_t result;
-
-	attr = bt_rpc_decode_gatt_attr(value);
-
-	if (!ser_decoding_done_and_check(value)) {
-		goto decoding_error;
-	}
-
-	result = bt_gatt_attr_value_handle(attr);
-
-	ser_rsp_send_uint(result);
-
-	return;
-decoding_error:
-	report_decoding_error(BT_GATT_ATTR_VALUE_HANDLE_RPC_CMD, handler_data);
-
-}
-
-NRF_RPC_CBOR_CMD_DECODER(bt_rpc_grp, bt_gatt_attr_value_handle, BT_GATT_ATTR_VALUE_HANDLE_RPC_CMD,
-			 bt_gatt_attr_value_handle_rpc_handler, NULL);
-
 void bt_gatt_cb_att_mtu_update_call(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	struct nrf_rpc_cbor_ctx ctx;

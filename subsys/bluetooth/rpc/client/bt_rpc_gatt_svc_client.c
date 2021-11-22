@@ -892,6 +892,10 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 	uint16_t result;
 	size_t buffer_size_max = 5;
 
+	if (attr != NULL && attr->handle != 0) {
+		return attr->handle;
+	}
+
 	NRF_RPC_CBOR_ALLOC(ctx, buffer_size_max);
 
 	bt_rpc_encode_gatt_attr(&ctx.encoder, attr);
@@ -904,16 +908,17 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 
 uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr)
 {
-	struct nrf_rpc_cbor_ctx ctx;
-	uint16_t result;
-	size_t buffer_size_max = 5;
+	uint16_t result = 0;
+	struct bt_gatt_chrc *chrc;
 
-	NRF_RPC_CBOR_ALLOC(ctx, buffer_size_max);
-
-	bt_rpc_encode_gatt_attr(&ctx.encoder, attr);
-
-	nrf_rpc_cbor_cmd_no_err(&bt_rpc_grp, BT_GATT_ATTR_VALUE_HANDLE_RPC_CMD,
-		&ctx, ser_rsp_decode_u16, &result);
+	if (attr != NULL && bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
+		chrc = attr->user_data;
+		if (chrc != NULL && chrc->value_handle != 0) {
+			result = chrc->value_handle;
+		} else {
+			result = bt_gatt_attr_get_handle(attr) + 1;
+		}
+	}
 
 	return result;
 }

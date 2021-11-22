@@ -695,6 +695,12 @@ static void bt_conn_cb_connected_call(struct bt_conn *conn, uint8_t err)
 			cb->connected(conn, err);
 		}
 	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->connected) {
+			cb->connected(conn, err);
+		}
+	}
 }
 
 static void bt_conn_cb_connected_call_rpc_handler(CborValue *value, void *handler_data)
@@ -726,6 +732,12 @@ static void bt_conn_cb_disconnected_call(struct bt_conn *conn, uint8_t reason)
 	struct bt_conn_cb *cb;
 
 	for (cb = first_bt_conn_cb; cb; cb = cb->_next) {
+		if (cb->disconnected) {
+			cb->disconnected(conn, reason);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->disconnected) {
 			cb->disconnected(conn, reason);
 		}
@@ -762,6 +774,14 @@ static bool bt_conn_cb_le_param_req_call(struct bt_conn *conn, struct bt_le_conn
 	struct bt_conn_cb *cb;
 
 	for (cb = first_bt_conn_cb; cb; cb = cb->_next) {
+		if (cb->le_param_req) {
+			if (!cb->le_param_req(conn, param)) {
+				return false;
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_param_req) {
 			if (!cb->le_param_req(conn, param)) {
 				return false;
@@ -808,6 +828,12 @@ static void bt_conn_cb_le_param_updated_call(struct bt_conn *conn, uint16_t inte
 			cb->le_param_updated(conn, interval, latency, timeout);
 		}
 	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_param_updated) {
+			cb->le_param_updated(conn, interval, latency, timeout);
+		}
+	}
 }
 
 static void bt_conn_cb_le_param_updated_call_rpc_handler(CborValue *value, void *handler_data)
@@ -846,6 +872,12 @@ static void bt_conn_cb_identity_resolved_call(struct bt_conn *conn, const bt_add
 	struct bt_conn_cb *cb;
 
 	for (cb = first_bt_conn_cb; cb; cb = cb->_next) {
+		if (cb->identity_resolved) {
+			cb->identity_resolved(conn, rpa, identity);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->identity_resolved) {
 			cb->identity_resolved(conn, rpa, identity);
 		}
@@ -893,6 +925,12 @@ static void bt_conn_cb_security_changed_call(struct bt_conn *conn, bt_security_t
 			cb->security_changed(conn, level, err);
 		}
 	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->security_changed) {
+			cb->security_changed(conn, level, err);
+		}
+	}
 }
 
 static void bt_conn_cb_security_changed_call_rpc_handler(CborValue *value, void *handler_data)
@@ -930,6 +968,12 @@ static void bt_conn_cb_remote_info_available_call(struct bt_conn *conn,
 	struct bt_conn_cb *cb;
 
 	for (cb = first_bt_conn_cb; cb; cb = cb->_next) {
+		if (cb->remote_info_available) {
+			cb->remote_info_available(conn, remote_info);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->remote_info_available) {
 			cb->remote_info_available(conn, remote_info);
 		}
@@ -975,6 +1019,12 @@ static void bt_conn_cb_le_phy_updated_call(struct bt_conn *conn, struct bt_conn_
 			cb->le_phy_updated(conn, param);
 		}
 	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_phy_updated) {
+			cb->le_phy_updated(conn, param);
+		}
+	}
 }
 
 static void bt_conn_cb_le_phy_updated_call_rpc_handler(CborValue *value, void *handler_data)
@@ -1010,6 +1060,12 @@ static void bt_conn_cb_le_data_len_updated_call(struct bt_conn *conn,
 	struct bt_conn_cb *cb;
 
 	for (cb = first_bt_conn_cb; cb; cb = cb->_next) {
+		if (cb->le_data_len_updated) {
+			cb->le_data_len_updated(conn, info);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->le_data_len_updated) {
 			cb->le_data_len_updated(conn, info);
 		}
@@ -1624,3 +1680,11 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn)
 	return BT_SECURITY_L1;
 }
 #endif /* defined(CONFIG_BT_SMP) */
+
+void bt_rpc_conn_init(void)
+{
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		bt_conn_cb_register_on_remote();
+		return;
+	}
+}
