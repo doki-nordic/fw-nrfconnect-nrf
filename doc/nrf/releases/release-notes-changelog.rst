@@ -743,6 +743,8 @@ Scripts
 
 This section provides detailed lists of changes by :ref:`script <scripts>`.
 
+* Added new ``west sbom`` command that generates :ref:`Software bill of materials <sbom_script>`.
+
 Unity
 -----
 
