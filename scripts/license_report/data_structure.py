@@ -9,8 +9,9 @@ from pathlib import Path
 
 class FileInfo:
     file_path: Path
-    licenses: 'set[str]'
+    licenses: 'set[str]' = set()
     sha1: str
+    detectors: 'set[str]' = set()
 
 class CustomLicense:
     id: str
@@ -18,6 +19,6 @@ class CustomLicense:
     name: str
 
 class Data:
-    files: 'list[FileInfo]'
-    custom_licenses: 'dict[CustomLicense]'
-    files_by_license: 'dict[list[FileInfo]]'
+    files: 'list[FileInfo]' = list()
+    custom_licenses: 'dict[CustomLicense]' = dict()
+    files_by_license: 'dict[list[FileInfo]]' = dict()
