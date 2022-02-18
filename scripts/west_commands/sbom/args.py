@@ -6,6 +6,13 @@
 
 import argparse
 
+command_description = 'Create license report for application'
+
+command_help = '''
+Create license report for application
+TODO: longer help
+'''
+
 detectors_help = '''
 License detectors:
 
@@ -21,13 +28,18 @@ scancode-toolkit
 
 class ArgsClass:
     ''' Lists all command line arguments for better type hinting. '''
-    help: bool
+    _initialized: bool = False
+    # arguments added by west
+    help: 'bool|None'
+    zephyr_base: 'str|None'
+    verbose: int
+    command: str
+    # command arguments
     build_dir: 'list[str]|None'
     input_files: 'list[list[str]]|None'
     input_list_file: 'list[str]|None'
     license_detectors: 'list[str]'
     optional_license_detectors: 'set[str]'
-    pass
 
 
 def split_arg_list(text: str) -> 'list[str]':
@@ -47,13 +59,7 @@ def split_detectors_list(allowed_detectors: dict, text: str) -> 'list[str]':
     return arr
 
 
-def init_args(allowed_detectors: dict):
-    '''Parse, validate and postprocess arguments'''
-    global args
-
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Create license report for application',
-                                     add_help=False, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument('-d', '--build-dir', action='append',
                         help='Build input directory. You can provide this option more than once.')
     parser.add_argument('--input-files', nargs='+', action='append',
@@ -71,15 +77,25 @@ def init_args(allowed_detectors: dict):
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
-    parser.add_argument('--help', action='store_true',
-                        help='Show this help message and exit')
-    parser.parse_args(namespace=args)
 
-    # Show help with list of detectors
-    if args.help:
-        parser.print_help()
-        print(detectors_help)
-        exit()
+
+def copy_arguments(source):
+    global args
+    for name in source.__dict__:
+        args.__dict__[name] = source.__dict__[name]
+    args._initialized = True
+
+
+def init_args(allowed_detectors: dict):
+    '''Parse, validate and postprocess arguments'''
+    global args, command_description
+
+    if not args._initialized:
+        # Parse command line arguments if running outside west
+        parser = argparse.ArgumentParser(description=command_description,
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        add_arguments(parser)
+        copy_arguments(parser.parse_args())
 
     # Validate and postprocess arguments
     args.license_detectors = split_detectors_list(allowed_detectors, args.license_detectors)

@@ -25,8 +25,9 @@ Specifying input:
 * File that contains list of files:
   --input-list-file list_file
   It does the same as ``--input-files``, but reads files and patterns from
-  a file (one file or pattern per line). Comments starting with ``#`` are
-  allowed.
+  a file (one file or pattern per line). Files and patterns contained in the
+  list file are relative to the list file location (not current directory).
+  Comments starting with ``#`` are allowed.
 
 Each of the above input options can be specified multiple times to provide
 more input for the report generation, e.g. produce report for two applications.
