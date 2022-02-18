@@ -14,8 +14,6 @@ TODO: longer help
 '''
 
 detectors_help = '''
-License detectors:
-
 spdx-tag
   Search for the SPDX-License-Identifier in the source code or the binary file.
   For guidelines, see:
@@ -35,11 +33,12 @@ class ArgsClass:
     verbose: int
     command: str
     # command arguments
-    build_dir: 'list[str]|None'
+    build_dir: 'list[list[str]]|None'
     input_files: 'list[list[str]]|None'
     input_list_file: 'list[str]|None'
     license_detectors: 'list[str]'
     optional_license_detectors: 'set[str]'
+    help_detectors: bool
 
 
 def split_arg_list(text: str) -> 'list[str]':
@@ -60,7 +59,7 @@ def split_detectors_list(allowed_detectors: dict, text: str) -> 'list[str]':
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument('-d', '--build-dir', action='append',
+    parser.add_argument('-d', '--build-dir', nargs='+', action='append',
                         help='Build input directory. You can provide this option more than once.')
     parser.add_argument('--input-files', nargs='+', action='append',
                         help='Input files. You can use globs (?, *, **) to provide more files. '
@@ -77,6 +76,8 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
+    parser.add_argument('--help-detectors', action='store_true',
+                        help='Show help for each available detector and exit.')
 
 
 def copy_arguments(source):
@@ -96,6 +97,10 @@ def init_args(allowed_detectors: dict):
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         add_arguments(parser)
         copy_arguments(parser.parse_args())
+
+    if args.help_detectors:
+        print(detectors_help)
+        exit()
 
     # Validate and postprocess arguments
     args.license_detectors = split_detectors_list(allowed_detectors, args.license_detectors)

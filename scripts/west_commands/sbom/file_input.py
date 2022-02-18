@@ -28,12 +28,14 @@ def generate_input(data: Data):
     if args.input_files is not None:
         cwd = Path('.').resolve()
         for globs in args.input_files:
+            data.inputs.append(f'files: {", ".join(globs)} (relative to {cwd})')
             r = resolve_globs(cwd, globs)
             full_set = full_set.union(r)
 
     if args.input_list_file is not None:
         for file in args.input_list_file:
             file_path = Path(file).resolve()
+            data.inputs.append(f'list of files read from: {file_path}')
             globs = list()
             with open(file_path, 'r') as fd:
                 for line in fd:

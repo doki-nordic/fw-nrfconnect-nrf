@@ -24,3 +24,4 @@ class Data:
     files: 'list[FileInfo]' = list()
     custom_licenses: 'dict[CustomLicense]' = dict()
     files_by_license: 'dict[list[FileInfo]]' = dict()
+    inputs: 'list[str]' = list()

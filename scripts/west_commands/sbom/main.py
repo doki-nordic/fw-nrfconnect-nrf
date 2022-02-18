@@ -6,6 +6,7 @@
 
 import spdx_tag_detector
 import file_input
+import input_build
 import input_post_process
 
 from args import args, init_args
@@ -32,8 +33,8 @@ def main():
 
     data = Data()
 
+    input_build.generate_input(data)
     file_input.generate_input(data)
-    #build_input.generate_input(data) # TODO: process application build inputs
 
     input_post_process.post_process(data)
 
@@ -47,9 +48,11 @@ def main():
     if True:
         for f in data.files:
             print(f.file_path)
-            for name, value in f.__dict__.items():
-                if (name != 'file_path'):
-                    print(f'        {name}: {value}')
+            for name in dir(f):
+                if name == 'file_path' or name.startswith('_'):
+                    continue
+                value = getattr(f, name)
+                print(f'        {name}: {value}')
 
     for generator_name, generator in generators:
         if f'output_{generator_name}' in args.__dict__:
