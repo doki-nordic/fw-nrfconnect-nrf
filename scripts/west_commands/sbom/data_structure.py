@@ -12,6 +12,8 @@ class FileInfo:
     licenses: 'set[str]' = set()
     sha1: str
     detectors: 'set[str]' = set()
+    errors: 'list[str]' = list()
+    warnings: 'list[str]' = list()
 
 class CustomLicense:
     id: str
