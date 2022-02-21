@@ -74,7 +74,7 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Reads list of files from a file. Works the same as "--input-files". '
                              'with arguments from each line of the file.'
                              'You can provide this option more than once.')
-    parser.add_argument('--license-detectors', default='spdx-tag',
+    parser.add_argument('--license-detectors', default='spdx-tag,full-text',
                         help='Comma separated list of enabled license detectors.')
     parser.add_argument('--optional-license-detectors', default='', # TODO: default scancode-toolkit
                         help='Comma separated list of optional license detectors. Optional license '

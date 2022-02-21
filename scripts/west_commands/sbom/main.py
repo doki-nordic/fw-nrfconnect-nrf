@@ -6,6 +6,7 @@
 
 from pathlib import Path
 import spdx_tag_detector
+import full_text_detector
 import file_input
 import input_build
 import input_post_process
@@ -18,6 +19,7 @@ import output_template
 
 detectors = {
     'spdx-tag': spdx_tag_detector.detect,
+    'full-text': full_text_detector.detect,
     #'scancode-toolkit': scancode_toolkit_detector.detect,
 }
 
@@ -44,7 +46,7 @@ def main():
 
     output_pre_process.pre_process(data)
 
-    if True:
+    if 0:
         for f in data.files:
             print(f.file_path)
             for name in dir(f):

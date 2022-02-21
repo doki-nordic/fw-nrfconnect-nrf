@@ -5,7 +5,7 @@
 
 
 from data_structure import Data, License
-from spdx_utils import get_spdx_license, is_spdx_license
+from license_utils import get_license, is_spdx_license
 
 
 def pre_process(data: Data):
@@ -30,11 +30,13 @@ def pre_process(data: Data):
     new_licenses = dict()
     for id in data.licenses_sorted:
         if is_spdx_license(id):
-            new_licenses[id] = get_spdx_license(id)
+            new_licenses[id] = get_license(id)
         elif id in data.licenses:
             new_licenses[id] = data.licenses[id]
         else:
-            lic = License()
-            lic.id = id
+            lic = get_license(id)
+            if lic is None:
+                lic = License()
+                lic.id = id
             new_licenses[id] = lic
     data.licenses = new_licenses

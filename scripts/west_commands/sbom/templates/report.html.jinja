@@ -167,6 +167,17 @@
 	</pre>
 	{% endif %}
 	{% endfor %}
+
+
+	<h1>Custom license texts</h1>
+
+	{% for license in licenses_sorted %}
+	{% if licenses[license].text != None %}
+	<a name="text-{{license}}"></a>
+	<h2>{{license}}</h2>
+	<pre>{{licenses[license].text}}</pre>
+	{% endif %}
+	{% endfor %}
 </body>
 
 </html>
