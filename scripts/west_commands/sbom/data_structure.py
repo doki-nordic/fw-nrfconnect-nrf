@@ -15,13 +15,16 @@ class FileInfo:
     errors: 'list[str]' = list()
     warnings: 'list[str]' = list()
 
-class CustomLicense:
+class License:
+    custom: bool = True
     id: str
-    text: str
-    name: str
+    name: 'str|None' = None
+    url: 'str|None' = None
+    text: 'str|None' = None
 
 class Data:
     files: 'list[FileInfo]' = list()
-    custom_licenses: 'dict[CustomLicense]' = dict()
+    licenses: 'dict[License]' = dict()
     files_by_license: 'dict[list[FileInfo]]' = dict()
+    licenses_sorted: 'list[str]' = list()
     inputs: 'list[str]' = list()

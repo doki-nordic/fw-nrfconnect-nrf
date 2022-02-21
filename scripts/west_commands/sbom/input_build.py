@@ -236,7 +236,7 @@ class InputBuild:
                             f'in build directory "{self.build_dir}". '
                             f'Expected location "{map_file}".')
 
-        self.data.inputs.append(f'{target} from build directory {self.build_dir}')
+        self.data.inputs.append(f'{target} from build directory {self.build_dir.resolve()}')
         elf_inputs = self.query_inputs_recursive(target)
         self.verify_elf_inputs_in_map_file(map_file, elf_inputs)
         leafs = set()

@@ -4,13 +4,16 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 
+from pathlib import Path
 import spdx_tag_detector
 import file_input
 import input_build
 import input_post_process
+import output_pre_process
 
 from args import args, init_args
 from data_structure import Data
+import output_template
 
 
 detectors = {
@@ -19,13 +22,9 @@ detectors = {
 }
 
 generators = {
-    #'html': 'templates/report.html.jinja'
+    'html': 'templates/report.html.jinja'
     #'other': function if output generation is not trivial
 }
-
-
-def generate_from_template(data, output_file, template_file):
-    pass #TODO: use jinja
 
 
 def main():
@@ -43,7 +42,7 @@ def main():
         optional = detector_name in args.optional_license_detectors
         func(data, optional)
 
-    #output_pre_process.pre_process(data) # TODO: Supply additional data needed by the generators, e.g. group files by license, sort files
+    output_pre_process.pre_process(data)
 
     if True:
         for f in data.files:
@@ -54,11 +53,11 @@ def main():
                 value = getattr(f, name)
                 print(f'        {name}: {value}')
 
-    for generator_name, generator in generators:
+    for generator_name, generator in generators.items():
         if f'output_{generator_name}' in args.__dict__:
             output_file = args.__dict__[f'output_{generator_name}']
             if type(generator) is str:
-                generate_from_template(data, output_file, generator)
+                output_template.generate(data, output_file, Path(__file__).parent / generator)
             else:
                 generator(data, output_file)
 

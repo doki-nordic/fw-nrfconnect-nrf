@@ -15,6 +15,8 @@ from types import SimpleNamespace
 
 url = 'https://raw.githubusercontent.com/spdx/license-list-data/master/json/licenses.json'
 
+def escape(text):
+    return text.replace("\\", "\\\\").replace("\"", "\\\"")
 
 print(f'Starting download from {url}')
 response = urllib.request.urlopen(url)
@@ -44,9 +46,9 @@ if update:
         fd.write(f'_version: "{data.licenseListVersion}"\n')
         for license in data.licenses:
             fd.write(f'{license.licenseId}:\n')
-            fd.write(f'  name: "{license.name}"\n')
+            fd.write(f'  name: "{escape(license.name)}"\n')
             if license.reference != f'https://spdx.org/licenses/{license.licenseId}.html':
-                fd.write(f'  url: "{license.reference}"\n')
+                fd.write(f'  url: "{escape(license.reference)}"\n')
 else:
     print('No need to update')
 

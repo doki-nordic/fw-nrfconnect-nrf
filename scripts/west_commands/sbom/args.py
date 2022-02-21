@@ -5,6 +5,9 @@
 
 
 import argparse
+from pathlib import Path
+
+default_report_name = 'sbom_report.html'
 
 command_description = 'Create license report for application'
 
@@ -38,6 +41,7 @@ class ArgsClass:
     input_list_file: 'list[str]|None'
     license_detectors: 'list[str]'
     optional_license_detectors: 'set[str]'
+    output_html: 'str|None'
     help_detectors: bool
 
 
@@ -76,6 +80,8 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
+    parser.add_argument('--output-html', default='',
+                        help='Gererage output HTML report.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 
@@ -106,6 +112,12 @@ def init_args(allowed_detectors: dict):
     args.license_detectors = split_detectors_list(allowed_detectors, args.license_detectors)
     args.optional_license_detectors = set(split_detectors_list(allowed_detectors,
                                                                args.optional_license_detectors))
+
+    if args.output_html == '':
+        if args.build_dir != None:
+            args.output_html = Path(args.build_dir[0][0]) / default_report_name
+        else:
+            args.output_html = None
 
 
 args: 'ArgsClass' = ArgsClass()
