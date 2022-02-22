@@ -1,4 +1,49 @@
 
+Requirements
+############
+
+The SBOM Script requires additional Python packages to be installed.
+
+Use the following commands to install the requirements for each repository.
+
+.. tabs::
+
+   .. group-tab:: Windows
+
+      Enter the following command in a command-line window in the :file:`ncs` folder:
+
+        .. parsed-literal::
+           :class: highlight
+
+           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+
+   .. group-tab:: Linux
+
+      Enter the following command in a terminal window in the :file:`ncs` folder:
+
+        .. parsed-literal::
+           :class: highlight
+
+           pip3 install --user -r nrf/scripts/requirements-west-sbom.txt
+
+   .. group-tab:: macOS
+
+      Enter the following command in a terminal window in the :file:`ncs` folder:
+
+        .. parsed-literal::
+           :class: highlight
+
+           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+
+..
+
+.. note::
+    The script uses the ScanCode-Toolkit which requires additional dependencies to be installed on Linux system.
+    To install the required tools on Ubuntu run::
+
+      sudo apt install python-dev bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
+
+    For more details see https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
 
 
 Specifying input:
