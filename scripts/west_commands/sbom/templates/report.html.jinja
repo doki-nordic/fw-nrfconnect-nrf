@@ -99,6 +99,13 @@
 </head>
 
 <body>
+	{% if '' in files_by_license %}
+	<div class="note error">
+		Some of the files does not contains license information or the license contained in them cannot be detected.<br>
+		See <a href="#no-license">license details</a> for list of files.
+		Evaluate them manually to get license information.
+	</div>
+	{% endif %}
 
 	<h1>Summary</h1>
 
@@ -112,13 +119,21 @@
 	<div>Detected files are covered by the licenses:</div>
 	<ul>
 		{% for license in licenses_sorted %}
-		{% if license %}
+		{% if license and license in files_by_license %}
 		<li><a href="#{{license|e}}">{{license|e}}</a></li>
 		{% endif %}
 		{% endfor %}
 		{% if '' in files_by_license %}
 		<li>Possibly other licenses that <a href="#no-license">cannot be detected automatically</a></li>
 		{% endif %}
+	</ul>
+
+	<div>Following licenses are not covered by <a href="https://spdx.org/licenses/">SPDX License List</a>,
+		so texts are added to this report:</div>
+	<ul>
+		{% for license in licenses_sorted if not licenses[license].is_expr and licenses[license].text != None %}
+			<li><a href="#text-{{license|e}}">{{license|e}}</a></li>
+		{% endfor %}
 	</ul>
 
 	<a name="license-details"></a>
@@ -130,53 +145,74 @@
 	<div class="note error">Following files does not contains license information or the license contained in them
 		cannot be detected.</div>
 	<pre>
-{% for file_info in files_by_license[''] %}{{file_info.file_path}}
+{% for file_info in files_by_license[''] %}{{file_info.file_path|e}}
 {% endfor %}
 	</pre>
 	{% endif %}
 
 	{% for license in licenses_sorted %}
-	{% if license %}
+	{% if license and license in files_by_license %}
 	<a name="{{license|e}}"></a>
 	<h2>{{license|e}}</h2>
 	<div class="info">
-		{% if licenses[license].custom %}
-		Non-standard SPDX License
-		<br />
-		{% endif %}
-
-		{% if licenses[license].name != None %}
-		{{licenses[license].name|e}}
+		{% if licenses[license].is_expr %}
+			License expression
+			{% if not licenses[license].valid %}
+				that cannot be correctly interpreted
+			{% endif %}
+			{% if licenses[license].licenses %}
+				with following licenses:<ul>
+				{% for sub_license in licenses[license].licenses %}
+					<li>
+					{{sub_license|e}}<br />
+					{% if licenses[sub_license].custom %}
+						Non-standard SPDX License:
+					{% endif %}
+					{% if licenses[sub_license].name != None %}
+						{{licenses[sub_license].name|e}}
+					{% else %}
+						{{license|e}}
+					{% endif %}
+					{% if licenses[sub_license].url != None %}
+						<br /><a href="{{licenses[sub_license].url|e}}">{{licenses[sub_license].url|e}}</a>
+					{% endif %}
+					{% if licenses[sub_license].text != None %}
+						<br />See <a href="#text-{{sub_license|e}}">license text below</a>.
+					{% endif %}
+					</li>
+				{% endfor %}
+			{% endif %}
+			</ul>
 		{% else %}
-		{{license|e}}
-		{% endif %}
-
-		{% if licenses[license].url != None %}
-		<br />
-		<a href="{{licenses[license].url|e}}">{{licenses[license].url|e}}</a>
-		{% endif %}
-
-		{% if licenses[license].text != None %}
-		<br />
-		See <a href="#text-{{license}}">license text below</a>.
+			{% if licenses[license].custom %}
+				Non-standard SPDX License:
+			{% endif %}
+			{% if licenses[license].name != None %}
+				{{licenses[license].name|e}}
+			{% else %}
+				{{license|e}}
+			{% endif %}
+			{% if licenses[license].url != None %}
+				<br /><a href="{{licenses[license].url|e}}">{{licenses[license].url|e}}</a>
+			{% endif %}
+			{% if licenses[license].text != None %}
+				<br />See <a href="#text-{{license|e}}">license text below</a>.
+			{% endif %}
 		{% endif %}
 	</div>
 	<pre>
-{% for file_info in files_by_license[license] %}{{file_info.file_path}}
+{% for file_info in files_by_license[license] %}{{file_info.file_path|e}}
 {% endfor %}
 	</pre>
 	{% endif %}
 	{% endfor %}
 
-
 	<h1>Custom license texts</h1>
 
-	{% for license in licenses_sorted %}
-	{% if licenses[license].text != None %}
-	<a name="text-{{license}}"></a>
-	<h2>{{license}}</h2>
-	<pre>{{licenses[license].text}}</pre>
-	{% endif %}
+	{% for license in licenses_sorted if not licenses[license].is_expr and licenses[license].text != None %}
+	<a name="text-{{license|e}}"></a>
+	<h2>{{license|e}}</h2>
+	<pre>{{licenses[license].text|e}}</pre>
 	{% endfor %}
 </body>
 
