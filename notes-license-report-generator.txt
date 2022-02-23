@@ -24,6 +24,3 @@ Planned CI use cases:
 * Run check for entire NCS if there is no regression regarding licenses.
 * Any more?
 
-To consider:
-============
-* support for absotule paths fot the --input-files parameter
