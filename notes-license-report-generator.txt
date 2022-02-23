@@ -23,3 +23,7 @@ Planned CI use cases:
 * Check if all files contained in the PR have valid SPDX tag.
 * Run check for entire NCS if there is no regression regarding licenses.
 * Any more?
+
+To consider:
+============
+* support for absotule paths fot the --input-files parameter
