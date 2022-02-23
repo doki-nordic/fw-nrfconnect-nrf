@@ -3,20 +3,37 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-from args import args
-
+import re
+from typing import Generator
 from pathlib import Path
+from args import args
 from data_structure import Data, FileInfo
+
+
+GLOB_PATTERN_START = re.compile(r'[\*\?\[]')
+
+
+def glob_with_abs_patterns(path: Path, glob: str) -> Generator:
+    glob_path = Path(glob)
+    if glob_path.is_absolute():
+        m = GLOB_PATTERN_START.search(glob)
+        if m is None:
+            return ( glob_path, )
+        parent = Path(glob[:m.start() + 1]).parent
+        relative = glob_path.relative_to(parent)
+        return parent.glob(str(relative))
+    else:
+        return path.glob(glob)
 
 
 def resolve_globs(path: Path, globs: 'list[str]') -> 'set(Path)':
     result = set()
     for glob in globs:
         if glob.startswith('!'):
-            for file in path.glob(glob[1:]):
+            for file in glob_with_abs_patterns(path, glob[1:]):
                 result.discard(file)
         else:
-            for file in path.glob(glob):
+            for file in glob_with_abs_patterns(path, glob):
                 if file.is_file():
                     result.add(file)
     return result

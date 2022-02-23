@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 
+import json
 from pathlib import Path
 import spdx_tag_detector
 import full_text_detector
@@ -57,12 +58,13 @@ def main():
                 print(f'        {name}: {value}')
 
     for generator_name, generator in generators.items():
-        if f'output_{generator_name}' in args.__dict__:
-            output_file = args.__dict__[f'output_{generator_name}']
-            if type(generator) is str:
-                output_template.generate(data, output_file, Path(__file__).parent / generator)
-            else:
-                generator(data, output_file)
+        output_file = args.__dict__[f'output_{generator_name}']
+        if output_file is None:
+            pass # Generator is unused
+        elif type(generator) is str:
+            output_template.generate(data, output_file, Path(__file__).parent / generator)
+        else:
+            generator(data, output_file)
 
 
 if __name__ == '__main__':
