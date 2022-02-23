@@ -1,0 +1,22 @@
+
+
+Methods of publishing scancode-toolkit-cache.json:
+==================================================
+1. Publish as a github action atifact:
+   - our script must use Github API to download latest artifact
+2. Publish to the same server as documentation.
+   - if using existsting method, it can be published at:
+     https://developer.nordicsemi.com/nRF_Connect_SDK_dev/doc/west-sbom/scancode-toolkit-cache.json
+   - if file cannot be in the "doc" directory, modification of monitor scripts are required
+3. Publish as a commit in master branch
+   - it will create a commit once a day
+4. As a commit in seperate repository:
+   - what/where repository?
+
+
+Planned CI use cases:
+=====================
+* Create and publish scancode-toolkit-cache.json.
+* Check if all files contained in the PR have valid SPDX tag.
+* Run check for entire NCS if there is no regression regarding licenses.
+* Any more?
