@@ -12,7 +12,10 @@ Methods of publishing scancode-toolkit-cache.json:
    - it will create a commit once a day
 4. As a commit in seperate repository:
    - what/where repository?
-
+SITE NOTE:
+   Database can contain timestamp when it was created and when update has been checked last time.
+   The script will check for updates when, e.g.: creation_time > 25h AND last_check_time > 24h
+   (assuming that database is created once a day)
 
 Planned CI use cases:
 =====================
