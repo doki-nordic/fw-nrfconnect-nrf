@@ -1,0 +1,12 @@
+{
+	"files": [
+		{% for file in files %}{
+			"path": "{{file.file_path}}",
+			"sha1": "{{file.sha1}}",
+			"license": [
+				{% for license in file.licenses %} "{{license}}"{{ ", " if not loop.last else "" }}
+			{% endfor %} ]
+		}{{ ", " if not loop.last else "" }}
+		{% endfor %}
+	]
+}

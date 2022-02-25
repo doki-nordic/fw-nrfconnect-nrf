@@ -42,6 +42,8 @@ class ArgsClass:
     license_detectors: 'list[str]'
     optional_license_detectors: 'set[str]'
     output_html: 'str|None'
+    output_scancode_db: 'str|None'
+    input_scancode_db: 'str|None'
     help_detectors: bool
 
 
@@ -81,7 +83,11 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
     parser.add_argument('--output-html', default='',
-                        help='Gererage output HTML report.')
+                        help='Generate output HTML report.')
+    parser.add_argument('--output-scancode-db', default='',
+                        help='Generate a license database for the files using scancode-toolkit')
+    parser.add_argument('--input-scancode-db', default='',
+                        help='Input license database. The database is passed to the "scancode-database" detector')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 
@@ -118,6 +124,12 @@ def init_args(allowed_detectors: dict):
             args.output_html = Path(args.build_dir[0][0]) / default_report_name
         else:
             args.output_html = None
+    
+    if args.output_scancode_db == '':
+        args.output_scancode_db = None
+
+    if args.input_scancode_db == '':
+        args.input_scancode_db = None
 
 
 args: 'ArgsClass' = ArgsClass()
