@@ -21,12 +21,12 @@ def cpu_count():
     return count
 
 
-def detect_db(data: Data, optional: bool):
-    if args.input_scancode_db == None:
+def detect_cache(data: Data, optional: bool):
+    if args.input_scancode_cache == None:
         print('Error input file is missing')
         return
  
-    with open(args.input_scancode_db, 'r') as fd:
+    with open(args.input_scancode_cache, 'r') as fd:
         db = json.load(fd, object_hook=lambda d: SimpleNamespace(**d))
 
     for file in data.files:
@@ -46,6 +46,8 @@ def detect(data: Data, optional: bool):
 
         result = subprocess.run(['scancode', '-cl',
                                 '--json-pp', '-',
+                                '--license-text',
+                                '--license-text-diagnostics',
                                 '-n', str(cpu_count()),
                                 file.file_path],
                                 capture_output=True,
@@ -59,7 +61,10 @@ def detect(data: Data, optional: bool):
             result_dict = json.loads(result.stdout)
             licenses = set()
             for i in result_dict['files'][0]['licenses']:
-                licenses.add(i['name'])
+                if i['key'] == 'unknown-spdx':
+                    licenses.add(i['matched_text'].replace('SPDX-License-Identifier: ', ''))
+                else:
+                    licenses.add(i['name'])
             file.licenses = file.licenses.union(licenses)
             file.detectors.add('scancode_toolkit')
 

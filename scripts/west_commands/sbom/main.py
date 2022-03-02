@@ -23,12 +23,12 @@ detectors = {
     'spdx-tag': spdx_tag_detector.detect,
     'full-text': full_text_detector.detect,
     'scancode-toolkit': scancode_toolkit_detector.detect,
-    'scancode-database': scancode_toolkit_detector.detect_db,
+    'scancode-cache': scancode_toolkit_detector.detect_cache,
 }
 
 generators = {
     'html': 'templates/report.html.jinja',
-    'scancode_db': 'templates/scancode.db.jinja'
+    'scancode_cache': 'templates/scancode.cache.jinja'
     #'other': function if output generation is not trivial
 }
 
