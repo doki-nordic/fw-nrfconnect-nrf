@@ -22,8 +22,16 @@ spdx-tag
   For guidelines, see:
   https://spdx.github.io/spdx-spec/using-SPDX-short-identifiers-in-source-files
 
+full-text
+    Compare the contents of the license with the references that are stored in the database.
+
 scancode-toolkit
-  scancode-toolkit description
+  License detection by scancode-toolkit.
+  For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
+
+scancode-cache
+  The type of license is based on a predefined database.
+  File name and hash function must mach values stored in the database.
 '''
 
 
