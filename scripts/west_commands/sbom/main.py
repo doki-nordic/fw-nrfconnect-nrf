@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 
-import json
+from west import log
 from pathlib import Path
+from common import SbomException
 import spdx_tag_detector
 import full_text_detector
 import scancode_toolkit_detector
@@ -34,39 +35,42 @@ generators = {
 
 
 def main():
-    init_args(detectors)
+    try:
+        init_args(detectors)
 
-    data = Data()
+        data = Data()
 
-    input_build.generate_input(data)
-    file_input.generate_input(data)
+        input_build.generate_input(data)
+        file_input.generate_input(data)
 
-    input_post_process.post_process(data)
+        input_post_process.post_process(data)
 
-    for detector_name in args.license_detectors:
-        func = detectors[detector_name]
-        optional = detector_name in args.optional_license_detectors
-        func(data, optional)
+        for detector_name in args.license_detectors:
+            func = detectors[detector_name]
+            optional = detector_name in args.optional_license_detectors
+            func(data, optional)
 
-    output_pre_process.pre_process(data)
+        output_pre_process.pre_process(data)
 
-    if 0:
-        for f in data.files:
-            print(f.file_path)
-            for name in dir(f):
-                if name == 'file_path' or name.startswith('_'):
-                    continue
-                value = getattr(f, name)
-                print(f'        {name}: {value}')
+        if 0:
+            for f in data.files:
+                print(f.file_path)
+                for name in dir(f):
+                    if name == 'file_path' or name.startswith('_'):
+                        continue
+                    value = getattr(f, name)
+                    print(f'        {name}: {value}')
 
-    for generator_name, generator in generators.items():
-        output_file = args.__dict__[f'output_{generator_name}']
-        if output_file is None:
-            pass # Generator is unused
-        elif type(generator) is str:
-            output_template.generate(data, output_file, Path(__file__).parent / generator)
-        else:
-            generator(data, output_file)
+        for generator_name, generator in generators.items():
+            output_file = args.__dict__[f'output_{generator_name}']
+            if output_file is None:
+                pass # Generator is unused
+            elif type(generator) is str:
+                output_template.generate(data, output_file, Path(__file__).parent / generator)
+            else:
+                generator(data, output_file)
+    except SbomException as e:
+        log.die(str(e), exit_code=1)
 
 
 if __name__ == '__main__':

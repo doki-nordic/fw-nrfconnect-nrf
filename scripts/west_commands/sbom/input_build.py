@@ -4,15 +4,15 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 from enum import Enum
-from os import unlink
 import os
 import re
-import subprocess
-from tempfile import mktemp
 from args import args
 
 from pathlib import Path
 from data_structure import Data, FileInfo
+from west import log
+
+from common import SbomException, command_execute
 
 
 default_target = 'zephyr/zephyr.elf'
@@ -45,11 +45,12 @@ class InputBuild:
     def __init__(self, data: Data, build_dir: Path):
         self.data = data
         self.build_dir = Path(build_dir)
-        deps_file_name = self.tool_execute('ninja -t deps')
+        deps_file_name = command_execute('ninja', '-t', 'deps', cwd=self.build_dir,
+                                         return_path=True)
         self.parse_deps_file(deps_file_name)
 
 
-    def parse_deps_file(self, deps_file_name): # TODO: check if deps are valid
+    def parse_deps_file(self, deps_file_name):
         self.deps = dict()
         TARGET_LINE_RE = re.compile(r'([^\s]+)\s*:\s*(#.*)?')
         DEP_LINE_RE = re.compile(r'\s+(.*?)\s*(#.*)?')
@@ -72,41 +73,11 @@ class InputBuild:
                     dep.add(m.group(1))
                     continue
                 m = EMPTY_LINE_RE.fullmatch(line)
-                if m is not None:
-                    continue
-                raise Exception(f'{deps_file_name}:{line_no}: Cannot parse dependency file')
-
-
-    def tool_execute(self, command: str, return_str: bool=False) -> 'Path|str':
-        ninja_out_name = mktemp('.txt', 'licgen_stdout_')
-        with open(ninja_out_name, 'w') as ninja_out_fd:
-            ninja_err_name = mktemp('.txt', 'licgen_stderr_')
-            with open(ninja_err_name, 'w') as ninja_err_fd:
-                try:
-                    cp = subprocess.run(command, shell=True, stdout=ninja_out_fd,
-                                        stderr=ninja_err_fd, cwd=self.build_dir)
-                except Exception as e:
-                    # TODO: log details
-                    raise # TODO: raise out wxception that can be shown to user
-        with open(ninja_err_name, 'r') as ninja_err_fd:
-            err = ninja_err_fd.read().strip()
-            if len(err) > 0:
-                # TODO: log err
-                if cp.returncode == 0:
-                    raise Exception(f'"{command}" command reported some errors.') #TODO: our exception
-        unlink(ninja_err_name)
-        if cp.returncode != 0:
-            #TODO: our exception
-            raise Exception(f'"{command}" command exited with error code {cp.returncode}')
-        if return_str:
-            with open(ninja_out_name, 'r') as fd:
-                return fd.read()
-        else:
-            return Path(ninja_out_name)
+                assert(m is not None)
 
 
     def query_inputs(self, target: str) -> 'tuple[set[str], set[str], set[str], bool]':
-        lines = self.tool_execute(f'ninja -t query {target}', True)
+        lines = command_execute('ninja', '-t', 'query', target, cwd=self.build_dir)
         lines = lines.split('\n')
         lines = tuple(filter(lambda line: len(line.strip()) > 0, lines))
         ln = 0
@@ -128,11 +99,9 @@ class InputBuild:
                 phony = phony or (re.search(r'(\s|^)phony(\s|$)', m.group(3)) != None)
                 if dir == 'input':
                     inputs = True
-                elif dir == 'outputs':
-                    inputs = False
                 else:
-                    #TODO our exception
-                    raise Exception(f'Cannot parse output from "ninja -t query {target}" command!')
+                    assert(dir == 'outputs')
+                    inputs = False
                 while ln < len(lines):
                     m = re.fullmatch(r'(\s*)(\|?\|?)\s*(.*)', lines[ln])
                     assert(m != None)
@@ -167,12 +136,9 @@ class InputBuild:
             else:
                 sub_inputs_tuple = self.query_inputs(input)
                 phony = sub_inputs_tuple[3]
-                if phony:
-                    sub_result = self.query_inputs_recursive(input, done, sub_inputs_tuple)
-                    result = result.union(sub_result)
-                else:
-                    #TODO: our exception
-                    raise Exception(f'Non-phony target {input} does not exist on disk.')
+                assert(phony)
+                sub_result = self.query_inputs_recursive(input, done, sub_inputs_tuple)
+                result = result.union(sub_result)
         return result
 
 
@@ -182,7 +148,7 @@ class InputBuild:
 
 
     def verify_archive_inputs(self, archive_path, inputs):
-        arch_files = self.tool_execute(f'ar -t "{archive_path}"', True) #TODO: implement 'ar' tool detection or input parameter
+        arch_files = command_execute('ar', '-t', archive_path) #TODO: implement 'ar' tool detection or input parameter
         arch_files = arch_files.split('\n')
         arch_files = (f.strip().replace('/', os.sep).replace('\\', os.sep).strip(os.sep) for f in arch_files)
         arch_files = filter(lambda file: len(file.strip()) > 0, arch_files)
@@ -207,10 +173,9 @@ class InputBuild:
             input_type = detect_file_type(input_path)
             if input_type == FileType.OTHER:
                 leafs.add(input_path)
-            elif input_type == FileType.OBJ:
-                leafs = leafs.union(self.process_obj(input_path, input))
             else:
-                raise Exception(f'One library depends on another') #TODO our exception
+                assert(input_type == FileType.OBJ)
+                leafs = leafs.union(self.process_obj(input_path, input))
         return leafs
 
 
@@ -231,10 +196,9 @@ class InputBuild:
             map_file = (self.build_dir / target).with_suffix('.map')
 
         if not map_file.exists():
-            # TODO: our exception
-            raise Exception(f'Cannot find map file for "{target}" '
-                            f'in build directory "{self.build_dir}". '
-                            f'Expected location "{map_file}".')
+            raise SbomException(f'Cannot find map file for "{target}" '
+                                f'in build directory "{self.build_dir}". '
+                                f'Expected location "{map_file}".')
 
         self.data.inputs.append(f'{target} from build directory {self.build_dir.resolve()}')
         elf_inputs = self.query_inputs_recursive(target)
