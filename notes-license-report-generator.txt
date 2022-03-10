@@ -24,3 +24,17 @@ Planned CI use cases:
 * Run check for entire NCS if there is no regression regarding licenses.
 * Any more?
 
+To do:
+======
+1. ncs/nrf/samples/bluetooth/peripheral_lbs$ west sbom -d build/ --license-detectors spdx-tag
+	Exception. file: ```input_build.py line 100
+   Exception: "ar -t "build/modules/nrf/drivers/hw_cc310/lib..__nrf__drivers__hw_cc310.a"" command exited with error code 9
+2. Case insensitive spdx license id.
+3. Add -n parameter [mj]
+4. Add relative west top dir as path in database (helper function in common.py) [mj]
+5. Improve database detector [mj]
+6. Rename scancode-cache to cache [mj]
+7. Display warning when list of input files is empty 
+8. Use west logger 
+9. Add own exception
+10. Add exception handling for scancode-toolkit (common.py)
