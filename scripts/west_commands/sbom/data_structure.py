@@ -17,6 +17,7 @@ class DataBaseClass:
 
 class FileInfo(DataBaseClass):
     file_path: Path
+    file_rel_path: Path
     licenses: 'set[str]' = set()
     license_expr: str
     sha1: str

@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-from west import log
+from west import log, util
 import re
+import os
 from typing import Generator
 from pathlib import Path
 from args import args
@@ -83,4 +84,5 @@ def generate_input(data: Data):
     for file_path in full_set:
         file = FileInfo()
         file.file_path = file_path
+        file.file_rel_path = os.path.relpath(file_path, util.west_topdir())
         data.files.append(file)
