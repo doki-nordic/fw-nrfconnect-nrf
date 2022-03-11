@@ -120,7 +120,7 @@
 	<ul>
 		{% for license in licenses_sorted %}
 		{% if license and license in files_by_license %}
-		<li><a href="#{{license|e}}">{{license|e}}</a></li>
+		<li><a href="#{{license|e}}">{{licenses[license].friendly_id|e}}</a></li>
 		{% endif %}
 		{% endfor %}
 		{% if '' in files_by_license %}
@@ -132,7 +132,7 @@
 		so texts are added to this report:</div>
 	<ul>
 		{% for license in licenses_sorted if not licenses[license].is_expr and licenses[license].text != None %}
-			<li><a href="#text-{{license|e}}">{{license|e}}</a></li>
+			<li><a href="#text-{{license|e}}">{{licenses[license].friendly_id|e}}</a></li>
 		{% endfor %}
 	</ul>
 
@@ -142,8 +142,6 @@
 	{% if '' in files_by_license %}
 	<a name="no-license"></a>
 	<h2>No license information detected</h2>
-	<div class="note error">Following files does not contains license information or the license contained in them
-		cannot be detected.</div>
 	<pre>
 {% for file_info in files_by_license[''] %}{{file_info.file_path|e}}
 {% endfor %}
@@ -153,7 +151,7 @@
 	{% for license in licenses_sorted %}
 	{% if license and license in files_by_license %}
 	<a name="{{license|e}}"></a>
-	<h2>{{license|e}}</h2>
+	<h2>{{licenses[license].friendly_id|e}}</h2>
 	<div class="info">
 		{% if licenses[license].is_expr %}
 			License expression
@@ -164,14 +162,14 @@
 				with following licenses:<ul>
 				{% for sub_license in licenses[license].licenses %}
 					<li>
-					{{sub_license|e}}<br />
+					{{licenses[sub_license].friendly_id|e}}<br />
 					{% if licenses[sub_license].custom %}
 						Non-standard SPDX License:
 					{% endif %}
 					{% if licenses[sub_license].name != None %}
 						{{licenses[sub_license].name|e}}
 					{% else %}
-						{{license|e}}
+						{{licenses[sub_license].friendly_id|e}}
 					{% endif %}
 					{% if licenses[sub_license].url != None %}
 						<br /><a href="{{licenses[sub_license].url|e}}">{{licenses[sub_license].url|e}}</a>
@@ -190,7 +188,7 @@
 			{% if licenses[license].name != None %}
 				{{licenses[license].name|e}}
 			{% else %}
-				{{license|e}}
+				{{licenses[license].friendly_id|e}}
 			{% endif %}
 			{% if licenses[license].url != None %}
 				<br /><a href="{{licenses[license].url|e}}">{{licenses[license].url|e}}</a>
@@ -211,7 +209,7 @@
 
 	{% for license in licenses_sorted if not licenses[license].is_expr and licenses[license].text != None %}
 	<a name="text-{{license|e}}"></a>
-	<h2>{{license|e}}</h2>
+	<h2>{{licenses[license].friendly_id|e}}</h2>
 	<pre>{{licenses[license].text|e}}</pre>
 	{% endfor %}
 </body>

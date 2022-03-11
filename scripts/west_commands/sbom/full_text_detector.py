@@ -12,6 +12,7 @@ WHITESPACE_COLLAPSE_RE = re.compile(r'\s+')
 
 
 normalized_texts: 'dict(str)' = dict()
+detector_patterns: 'list(tuple(re.Pattern, str))' = list()
 
 
 def normalize_text(text: str, strip_comments: bool=False):
@@ -26,7 +27,14 @@ def normalize_text(text: str, strip_comments: bool=False):
 def init():
     if len(normalized_texts) == 0:
         for license in get_license_texts():
-            normalized_texts[normalize_text(license.text)] = license.id
+            if license.detector is None:
+                normalized_texts[normalize_text(license.text)] = license.id
+            else:
+                pattern = ''
+                for part in license.detector.split('</regex>'):
+                    plain, *regex = part.split('<regex>') + [ '' ]
+                    pattern += re.escape(normalize_text(plain)) + ''.join(regex)
+                detector_patterns.append((re.compile(pattern), license.id))
 
 
 def detect(data: Data, optional: bool):
@@ -46,7 +54,10 @@ def detect(data: Data, optional: bool):
         for text, id in normalized_texts.items():
             pos = content.find(text)
             if pos >= 0:
-                results.add(id)
+                results.add(id.upper())
+        for pattern, id in detector_patterns:
+            if pattern.search(content) is not None:
+                results.add(id.upper())
         if len(results) > 0:
             file.licenses = file.licenses.union(results)
             file.detectors.add('full-text')

@@ -31,7 +31,8 @@ def pre_process(data: Data):
         if not info.valid or not info.is_id_only:
             expr = LicenseExpr()
             expr.valid = info.valid
-            expr.expr = file.license_expr
+            expr.id = file.license_expr
+            expr.friendly_id = info.friendly_expr
             expr.licenses = sorted(info.licenses)
             expr.custom = not info.valid
             for id in expr.licenses:
@@ -51,6 +52,7 @@ def pre_process(data: Data):
                 if lic is None:
                     lic = License()
                     lic.id = id
+                    lic.friendly_id = id
                 used_licenses[id] = lic
     data.licenses = used_licenses
     # Group files by license id or expression

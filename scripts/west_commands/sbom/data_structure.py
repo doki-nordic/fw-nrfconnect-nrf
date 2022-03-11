@@ -27,16 +27,19 @@ class FileInfo(DataBaseClass):
 class License(DataBaseClass):
     is_expr: bool = False
     id: str
+    friendly_id: str
     custom: bool = True
     name: 'str|None' = None
     url: 'str|None' = None
     text: 'str|None' = None
+    detector: 'str|None' = None
 
 class LicenseExpr(DataBaseClass):
     is_expr: bool = True
-    expr: str
-    valid: bool
+    id: str
+    friendly_id: str
     custom: bool = True
+    valid: bool
     licenses: 'list[str]' = list()
 
 class Data(DataBaseClass):
