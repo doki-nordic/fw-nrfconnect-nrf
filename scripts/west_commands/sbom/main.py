@@ -10,6 +10,7 @@ from common import SbomException
 import spdx_tag_detector
 import full_text_detector
 import scancode_toolkit_detector
+import cache_database_detector
 import file_input
 import input_build
 import input_post_process
@@ -24,12 +25,12 @@ detectors = {
     'spdx-tag': spdx_tag_detector.detect,
     'full-text': full_text_detector.detect,
     'scancode-toolkit': scancode_toolkit_detector.detect,
-    'scancode-cache': scancode_toolkit_detector.detect_cache,
+    'cache-database': cache_database_detector.detect,
 }
 
 generators = {
     'html': 'templates/report.html.jinja',
-    'scancode_cache': 'templates/scancode.cache.jinja'
+    'cache_database': 'templates/cache.database.jinja'
     #'other': function if output generation is not trivial
 }
 

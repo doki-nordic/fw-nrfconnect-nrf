@@ -15,6 +15,9 @@ Overview
 
 The Software bill of materials script uses different types of detectors, depending on the configuration.
 For a description of the detectors, see :ref:`Detectors` section.
+The choice of detector will affect the detection speed and may also affect the detection coverage.
+
+It is possible to create a list of licenses both for the built application and for the specified directory.
 
 Requirements
 ************
@@ -114,17 +117,17 @@ List of implemented detectors:
   License detection by scancode-toolkit.
   For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 
-* ScanCode Cache (database)::
+* Cache database::
 
-  --license-detectors scancode-cache --input-scancode-cache <cache-file.json>
+  --license-detectors cache-database --input-cache-database <cache-file.json>
 
-  The type of license is based on a predefined database.
-  File name and hash function must mach values stored in the database.
+  License detection is based on a predefined database.
+  The license type is obtained from the database.
 
   .. note::
-    You can generate the database base on scancode-toolkit by running following command::
+    You can generate the database base on e.g scancode-toolkit detector by running following command::
 
-      west sbom --input-files <files ..> --license-detectors scancode-toolkit --output-scancode-cache <file-name.json>
+      west sbom --input-files <files ..> --license-detectors scancode-toolkit --output-cache-database <file-name.json>
 
 .. _specifying_input:
 
@@ -181,10 +184,9 @@ Specifying output
 
   Generate output HTML report.
 
-* Database::
+* Cache database::
 
-  --output--scancode--cache <file.json>
+  --output-cache-database <file.json>
 
-  Generate output json database.
-  The file can be used as reference database for the ``scancode-cache`` detector.
-  And also for custom purposes.
+  Generate output json cache database.
+  The file can be used as reference database for the ``cache-database`` detector and also for custom purposes.

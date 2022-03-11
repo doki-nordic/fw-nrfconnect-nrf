@@ -23,15 +23,15 @@ spdx-tag
   https://spdx.github.io/spdx-spec/using-SPDX-short-identifiers-in-source-files
 
 full-text
-    Compare the contents of the license with the references that are stored in the database.
+  Compare the contents of the license with the references that are stored in the database.
 
 scancode-toolkit
   License detection by scancode-toolkit.
   For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 
-scancode-cache
-  The type of license is based on a predefined database.
-  File name and hash function must mach values stored in the database.
+cache-databese
+  License detection is based on a predefined database.
+  The license type is obtained from the database.
 '''
 
 
@@ -50,8 +50,8 @@ class ArgsClass:
     license_detectors: 'list[str]'
     optional_license_detectors: 'set[str]'
     output_html: 'str|None'
-    output_scancode_cache: 'str|None'
-    input_scancode_cache: 'str|None'
+    output_cache_database: 'str|None'
+    input_cache_database: 'str|None'
     processes: int
     help_detectors: bool
 
@@ -93,10 +93,10 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'detected any license.')
     parser.add_argument('--output-html', default='',
                         help='Generate output HTML report.')
-    parser.add_argument('--output-scancode-cache', default='',
+    parser.add_argument('--output-cache-database', default=None,
                         help='Generate a license database for the files using scancode-toolkit')
-    parser.add_argument('--input-scancode-cache', default='',
-                        help='Input license database. The database is passed to the "scancode-cache" detector')
+    parser.add_argument('--input-cache-database', default=None,
+                        help='Input license database. The database is passed to the "cache-databe" detector')
     parser.add_argument('-n', '--processes', type=int, default=0,
                         help='Scan using n parallel processes. By default, the number of processes is equal to the number of processor cores.')
     parser.add_argument('--help-detectors', action='store_true',
@@ -135,12 +135,6 @@ def init_args(allowed_detectors: dict):
             args.output_html = Path(args.build_dir[0][0]) / default_report_name
         else:
             args.output_html = None
-    
-    if args.output_scancode_cache == '':
-        args.output_scancode_cache = None
-
-    if args.input_scancode_cache == '':
-        args.input_scancode_cache = None
 
 
 args: 'ArgsClass' = ArgsClass()
