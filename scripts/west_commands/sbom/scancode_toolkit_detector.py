@@ -11,8 +11,10 @@ import multiprocessing
 from threading import Thread
 from types import SimpleNamespace
 from queue import Queue
+from unittest import result
 from data_structure import Data, FileInfo
 from args import args
+from common import SbomException, command_execute
 
 class _FileQueue(Queue):
     SENTINEL = object()
@@ -52,25 +54,18 @@ def _cpu_count():
 
 
 def _run_scancode(file: FileInfo):
-    result = subprocess.run(['scancode', '-cl',
-                            '--json-pp', '-',
-                            '--license-text',
-                            '--license-text-diagnostics',
-                            file.file_path],
-                            capture_output=True,
-                            encoding='utf-8')
-    try:
-        result.check_returncode()
-    except:
-        file.errors.append(f'scancode_toolkit: {result.stderr}')
-    else:
-        result_dict = json.loads(result.stdout)
-        licenses = set()
-        for i in result_dict['files'][0]['licenses']:
-            if i['key'] != 'unknown-spdx':
-                licenses.add(i['key'])
-        file.licenses = file.licenses.union(licenses)
-        file.detectors.add('scancode_toolkit')
+    result = command_execute('scancode', '-cl',
+                             '--json-pp', '-',
+                             '--license-text',
+                             '--license-text-diagnostics',
+                             file.file_path, allow_stderr=True)
+    result_dict = json.loads(result)
+    licenses = set()
+    for i in result_dict['files'][0]['licenses']:
+        if i['key'] != 'unknown-spdx':
+            licenses.add(i['key'])
+    file.licenses = file.licenses.union(licenses)
+    file.detectors.add('scancode_toolkit')
 
 
 def detect(data: Data, optional: bool):
