@@ -52,6 +52,7 @@ class ArgsClass:
     output_html: 'str|None'
     output_scancode_cache: 'str|None'
     input_scancode_cache: 'str|None'
+    processes: int
     help_detectors: bool
 
 
@@ -96,6 +97,8 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Generate a license database for the files using scancode-toolkit')
     parser.add_argument('--input-scancode-cache', default='',
                         help='Input license database. The database is passed to the "scancode-cache" detector')
+    parser.add_argument('-n', '--processes', type=int, default=0,
+                        help='Scan using n parallel processes. By default, the number of processes is equal to the number of processor cores.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 

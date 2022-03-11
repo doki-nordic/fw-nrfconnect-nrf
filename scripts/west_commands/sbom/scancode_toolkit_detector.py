@@ -67,30 +67,10 @@ def _run_scancode(file: FileInfo):
         result_dict = json.loads(result.stdout)
         licenses = set()
         for i in result_dict['files'][0]['licenses']:
-            if i['key'] == 'unknown-spdx':
-                licenses.add(i['matched_text'].replace('SPDX-License-Identifier: ', ''))
-            else:
-                licenses.add(i['name'])
+            if i['key'] != 'unknown-spdx':
+                licenses.add(i['key'])
         file.licenses = file.licenses.union(licenses)
         file.detectors.add('scancode_toolkit')
-
-
-def detect_cache(data: Data, optional: bool):
-    if args.input_scancode_cache == None:
-        print('Error input file is missing')
-        return
- 
-    with open(args.input_scancode_cache, 'r') as fd:
-        db = json.load(fd, object_hook=lambda d: SimpleNamespace(**d))
-
-    for file in data.files:
-        if optional and file.licenses:
-            continue
-        for f in db.files:
-            if f.path == str(file.file_path) and f.sha1 == str(file.sha1):
-                file.licenses = file.licenses.union(f.license)
-                file.detectors.add('scancode-database')
-                continue
 
 
 def detect(data: Data, optional: bool):
@@ -100,8 +80,8 @@ def detect(data: Data, optional: bool):
         if optional and file.licenses:
             continue
         file_queue.put(file)
-
-    threads = [_Worker(_run_scancode, file_queue) for _ in range(_cpu_count())]
+    n = args.processes if args.processes > 0 else _cpu_count()
+    threads = [_Worker(_run_scancode, file_queue) for _ in range(n)]
     for thread in threads:
         thread.start()
 
