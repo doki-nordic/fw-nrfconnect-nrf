@@ -4,14 +4,12 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 from concurrent.futures import thread
-from itertools import count
-import subprocess
 import json
 import multiprocessing
 from threading import Thread
-from types import SimpleNamespace
+from tempfile import NamedTemporaryFile
 from queue import Queue
-from unittest import result
+from west import log
 from data_structure import Data, FileInfo
 from args import args
 from common import SbomException, command_execute
@@ -54,18 +52,24 @@ def _cpu_count():
 
 
 def _run_scancode(file: FileInfo):
-    result = command_execute('scancode', '-cl',
-                             '--json-pp', '-',
-                             '--license-text',
-                             '--license-text-diagnostics',
-                             file.file_path, allow_stderr=True)
-    result_dict = json.loads(result)
-    licenses = set()
-    for i in result_dict['files'][0]['licenses']:
-        if i['key'] != 'unknown-spdx':
-            licenses.add(i['key'])
-    file.licenses = file.licenses.union(licenses)
-    file.detectors.add('scancode_toolkit')
+
+    with NamedTemporaryFile() as fp:
+        command_execute('scancode', '-cl',
+                        '--json', fp.name,
+                        '--license-text',
+                        '--license-text-diagnostics',
+                        '--quiet',
+                        file.file_path, allow_stderr=True)
+        fp.seek(0)
+        result = json.loads(fp.read())
+        licenses = set()
+        for i in result['files'][0]['licenses']:
+            if i['key'] != 'unknown-spdx':
+                licenses.add(i['key'])
+            else: 
+                log.wrn(f'Unknown spdx tag, file: {file.file_path}')
+        file.licenses = file.licenses.union(licenses)
+        file.detectors.add('scancode_toolkit')
 
 
 def detect(data: Data, optional: bool):
