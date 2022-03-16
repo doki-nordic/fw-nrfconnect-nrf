@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 import re
-from data_structure import Data, License
+from data_structure import Data
 from license_utils import get_license_texts
 
 COMMENTS_STRIP_RE = re.compile(r'^\s*(?:\/?\*|\/\/|#)?\s*(.*?)\s*(?:\*\/?|\/\/|#)?\s*$')
@@ -15,7 +15,7 @@ normalized_texts: 'dict(str)' = dict()
 detector_patterns: 'list(tuple(re.Pattern, str))' = list()
 
 
-def normalize_text(text: str, strip_comments: bool=False):
+def normalize_text(text: str, strip_comments: bool = False):
     if strip_comments:
         out = ''
         for line in text.split('\n'):
@@ -32,7 +32,7 @@ def init():
             else:
                 pattern = ''
                 for part in license.detector.split('</regex>'):
-                    plain, *regex = part.split('<regex>') + [ '' ]
+                    plain, *regex = part.split('<regex>') + ['']
                     pattern += re.escape(normalize_text(plain)) + ''.join(regex)
                 detector_patterns.append((re.compile(pattern), license.id))
 
@@ -47,7 +47,7 @@ def detect(data: Data, optional: bool):
                 content = fd.read()
         except:
             file.errors.append('Cannot read file contents')
-            #TODO: log details
+            # TODO: log details
             continue
         results = set()
         content = normalize_text(content, True)

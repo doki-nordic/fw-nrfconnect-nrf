@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 
-from data_structure import Data, FileInfo, License, LicenseExpr
+from data_structure import Data, License, LicenseExpr
 from license_utils import get_license, get_spdx_license_expr_info, is_spdx_license
 
 
@@ -13,7 +13,7 @@ def pre_process(data: Data):
     data.files.sort(key=lambda f: f.file_path)
     # Convert list of licenses to license expression for each file
     for file in data.files:
-        licenses = file.licenses if len(file.licenses) > 0 else [ '' ]
+        licenses = file.licenses if len(file.licenses) > 0 else ['']
         expr_items = list()
         for license in licenses:
             info = get_spdx_license_expr_info(license)
@@ -60,6 +60,7 @@ def pre_process(data: Data):
         if file.license_expr not in data.files_by_license:
             data.files_by_license[file.license_expr] = list()
         data.files_by_license[file.license_expr].append(file)
+
     # Sort licenses
     def lic_reorder(id: str):
         lic = data.licenses[id]

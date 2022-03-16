@@ -9,10 +9,10 @@ from data_structure import Data
 
 
 def detect(data: Data, optional: bool):
-    if args.input_cache_database == None:
+    if args.input_cache_database is None:
         print('Error input file is missing')
         return
- 
+
     with open(args.input_cache_database, 'r') as fd:
         db = json.load(fd)
 

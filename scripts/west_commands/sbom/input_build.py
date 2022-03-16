@@ -119,7 +119,7 @@ class InputBuild:
         return (explicit, implicit, order_only, phony)
 
 
-    def query_inputs_recursive(self, target: str, done: set=set(), inputs_tuple=None) -> 'set[str]':
+    def query_inputs_recursive(self, target: str, done: set = set(), inputs_tuple=None) -> 'set[str]':
         if inputs_tuple is None:
             explicit, implicit, _, _ = self.query_inputs(target)
         else:
@@ -143,12 +143,12 @@ class InputBuild:
 
 
     def verify_elf_inputs_in_map_file(self, map_file: Path, elf_inputs: 'set[str]'):
-        #TODO: read map file and check if all inputs provided by a map file are available in elf_inputs
+        # TODO: read map file and check if all inputs provided by a map file are available in elf_inputs
         pass
 
 
     def verify_archive_inputs(self, archive_path, inputs):
-        arch_files = command_execute('ar', '-t', archive_path) #TODO: implement 'ar' tool detection or input parameter
+        arch_files = command_execute('ar', '-t', archive_path)  # TODO: implement 'ar' tool detection or input parameter
         arch_files = arch_files.split('\n')
         arch_files = (f.strip().replace('/', os.sep).replace('\\', os.sep).strip(os.sep) for f in arch_files)
         arch_files = filter(lambda file: len(file.strip()) > 0, arch_files)
@@ -166,7 +166,7 @@ class InputBuild:
     def process_archive(self, archive_path, archive_target):
         archive_inputs = self.query_inputs_recursive(archive_target)
         if not self.verify_archive_inputs(archive_path, archive_inputs):
-            return { archive_path }
+            return {archive_path}
         leafs = set()
         for input in archive_inputs:
             input_path = self.build_dir / input
@@ -181,7 +181,7 @@ class InputBuild:
 
     def process_obj(self, input_path, input):
         if input not in self.deps:
-            return { input_path }
+            return {input_path}
         deps = self.deps[input]
         deps = deps.union(self.query_inputs_recursive(input))
         return set(self.build_dir / x for x in deps)
@@ -221,9 +221,10 @@ class InputBuild:
 
 def generate_input(data: Data):
     if args.build_dir is not None:
+        log.wrn('Note: It is an experimental functionality.')
         for build_dir, *targets in args.build_dir:
             if len(targets) == 0:
-                targets = [ default_target ]
+                targets = [default_target]
             b = InputBuild(data, build_dir)
             for target in targets:
                 b.generate_from_target(target)

@@ -31,7 +31,7 @@ detectors = {
 generators = {
     'html': 'templates/report.html.jinja',
     'cache_database': 'templates/cache.database.jinja'
-    #'other': function if output generation is not trivial
+    # 'other': function if output generation is not trivial
 }
 
 
@@ -65,7 +65,7 @@ def main():
         for generator_name, generator in generators.items():
             output_file = args.__dict__[f'output_{generator_name}']
             if output_file is None:
-                pass # Generator is unused
+                pass  # Generator is unused
             elif type(generator) is str:
                 output_template.generate(data, output_file, Path(__file__).parent / generator)
             else:

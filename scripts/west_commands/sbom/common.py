@@ -5,11 +5,10 @@
 
 
 import json
-from os import unlink
 from pathlib import Path
-from west import log
 import subprocess
 from tempfile import NamedTemporaryFile
+from west import log
 
 
 class SbomException(Exception):
@@ -53,4 +52,3 @@ def command_execute(*cmd_args: 'tuple[str|Path]', cwd: 'str|Path|None'=None,
         return Path(out_file)
     else:
         return out_file.read()
-

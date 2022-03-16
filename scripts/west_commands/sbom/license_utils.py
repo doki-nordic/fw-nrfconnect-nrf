@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import yaml
 
-from data_structure import DataBaseClass, License, LicenseExpr
+from data_structure import DataBaseClass, License
 
 
 spdx_licenses: 'dict(License)' = dict()
@@ -116,5 +116,6 @@ def load_data():
         license_texts.append(lic)
         if lic.id not in license_by_id:
             license_by_id[lic.id] = lic
+
 
 load_data()

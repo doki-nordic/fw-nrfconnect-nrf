@@ -87,7 +87,7 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'You can provide this option more than once.')
     parser.add_argument('--license-detectors', default='spdx-tag,full-text',
                         help='Comma separated list of enabled license detectors.')
-    parser.add_argument('--optional-license-detectors', default='', # TODO: default scancode-toolkit
+    parser.add_argument('--optional-license-detectors', default='',  # TODO: default scancode-toolkit
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
@@ -131,7 +131,7 @@ def init_args(allowed_detectors: dict):
                                                                args.optional_license_detectors))
 
     if args.output_html == '':
-        if args.build_dir != None:
+        if args.build_dir is not None:
             args.output_html = Path(args.build_dir[0][0]) / default_report_name
         else:
             args.output_html = None

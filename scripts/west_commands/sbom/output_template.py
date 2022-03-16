@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''Provides common methods for generating detectionreports.'''
 
 from pathlib import Path
 from typing import Any
@@ -27,4 +28,3 @@ def generate(data: Data, output_file: 'Path|str', template_file: Path):
     out = t.render(**data_to_dict(data))
     with open(output_file, 'w') as fd:
         fd.write(out)
-

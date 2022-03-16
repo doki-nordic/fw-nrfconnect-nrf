@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-from west import log, util
 import re
 import os
 from typing import Generator
 from pathlib import Path
 from args import args
+from west import log, util
 from data_structure import Data, FileInfo
 from common import SbomException
 
@@ -25,7 +25,7 @@ def glob_with_abs_patterns(path: Path, glob: str) -> Generator:
     if glob_path.is_absolute():
         m = GLOB_PATTERN_START.search(glob)
         if m is None:
-            return ( glob_path, )
+            return (glob_path, )
         parent = Path(glob[:m.start() + 1]).parent
         relative = glob_path.relative_to(parent)
         return parent.glob(str(relative))

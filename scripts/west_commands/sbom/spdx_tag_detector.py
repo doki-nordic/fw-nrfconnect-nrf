@@ -3,6 +3,11 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Implementation of a detector based on spdx identifiers.
+For more details see: https://spdx.github.io/spdx-spec/using-SPDX-short-identifiers-in-source-files
+'''
+
 import re
 from data_structure import Data
 
@@ -26,4 +31,3 @@ def detect(data: Data, optional: bool):
         if len(results) > 0:
             file.licenses = file.licenses.union(results)
             file.detectors.add('spdx-tag')
-
