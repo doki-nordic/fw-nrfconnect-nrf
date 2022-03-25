@@ -1,12 +1,12 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Main entry point for the script.
+'''
 
-from west import log
-from pathlib import Path
-from common import SbomException
 import spdx_tag_detector
 import full_text_detector
 import scancode_toolkit_detector
@@ -15,11 +15,18 @@ import file_input
 import input_build
 import input_post_process
 import output_pre_process
-
+import output_template
+from pathlib import Path
+from west import log
+from common import SbomException, dbg_time
 from args import args, init_args
 from data_structure import Data
-import output_template
 
+
+inputs = {
+    'input-build': input_build.generate_input,
+    'file-input': file_input.generate_input,
+}
 
 detectors = {
     'spdx-tag': spdx_tag_detector.detect,
@@ -36,40 +43,38 @@ generators = {
 
 
 def main():
+    '''Main entry function for the script.'''
     try:
         init_args(detectors)
 
         data = Data()
 
-        input_build.generate_input(data)
-        file_input.generate_input(data)
+        for input_name, input in inputs.items():
+            t = dbg_time(f'INPUT: {input_name}')
+            input(data)
+            log.dbg(f'INPUT: Done in {t}s')
 
         input_post_process.post_process(data)
 
         for detector_name in args.license_detectors:
             func = detectors[detector_name]
             optional = detector_name in args.optional_license_detectors
+            t = dbg_time(f'DETECTOR: {detector_name}')
             func(data, optional)
+            log.dbg(f'DETECTOR: Done in {t}s')
 
         output_pre_process.pre_process(data)
 
-        if 0:
-            for f in data.files:
-                print(f.file_path)
-                for name in dir(f):
-                    if name == 'file_path' or name.startswith('_'):
-                        continue
-                    value = getattr(f, name)
-                    print(f'        {name}: {value}')
-
         for generator_name, generator in generators.items():
             output_file = args.__dict__[f'output_{generator_name}']
+            t = dbg_time(f'GENERATOR: {generator_name}')
             if output_file is None:
-                pass  # Generator is unused
+                pass
             elif type(generator) is str:
                 output_template.generate(data, output_file, Path(__file__).parent / generator)
             else:
                 generator(data, output_file)
+            log.dbg(f'GENERATOR: Done in {t}s')
     except SbomException as e:
         log.die(str(e), exit_code=1)
 

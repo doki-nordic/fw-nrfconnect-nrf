@@ -9,56 +9,29 @@ For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 '''
 
 import json
-import multiprocessing
-from threading import Thread
 from tempfile import NamedTemporaryFile
-from queue import Queue
 from west import log
 from data_structure import Data, FileInfo
 from args import args
-from common import command_execute
+from common import SbomException, command_execute, concurrent_pool_iter
 
 
-class _FileQueue(Queue):
-    SENTINEL = object()
-
-    def close(self):
-        self.put(self.SENTINEL)
-
-    def __iter__(self):
-        while True:
-            item = self.get()
-            try:
-                if item is self.SENTINEL:
-                    return
-                yield item
-            finally:
-                self.task_done()
-
-
-class _Worker(Thread):
-    def __init__(self, func, in_queue):
-        super().__init__()
-        self.func = func
-        self.in_queue = in_queue
-
-    def run(self):
-        for item in self.in_queue:
-            self.func(item)
-
-
-def _cpu_count():
-    '''Retrunt the cpu count'''
+def check_scancode():
+    '''Checks if "scancode --version" works correctly. If not, raises exception with information
+    for user.'''
     try:
-        count = multiprocessing.cpu_count()
-    except:
-        count = 1
-    return count
+        command_execute(args.scancode, '--version', allow_stderr=True)
+    except Exception as ex:
+        raise SbomException(f'Cannot execute scancode command "{args.scancode}".\n'
+            f'Make sure that you have scancode-toolkit installed.\n'
+            f'Pass "--scancode=/path/to/scancode" if the scancode executable is '
+            f'not available on PATH.') from ex
 
 
-def _run_scancode(file: FileInfo):
-    with NamedTemporaryFile() as output_file:
-        command_execute('scancode', '-cl',
+def detect_file(file: FileInfo) -> 'set(str)':
+    '''Execute scancode and get license identifier from its results.'''
+    with NamedTemporaryFile(mode="w+") as output_file:
+        command_execute(args.scancode, '-cl',
                         '--json', output_file.name,
                         '--license-text',
                         '--license-text-diagnostics',
@@ -72,26 +45,21 @@ def _run_scancode(file: FileInfo):
                 licenses.add(i['key'])
             else:
                 log.wrn(f'Unknown spdx tag, file: {file.file_path}')
-        file.licenses = file.licenses.union(licenses)
-        file.detectors.add('scancode_toolkit')
+        return licenses
 
 
 def detect(data: Data, optional: bool):
     '''License detection using scancode-toolkit.'''
-    file_queue: FileInfo = _FileQueue()
 
-    for file in data.files:
-        if optional and file.licenses:
-            continue
-        file_queue.put(file)
-    cores = args.processes if args.processes > 0 else _cpu_count()
-    threads = [_Worker(_run_scancode, file_queue) for _ in range(cores)]
-    for thread in threads:
-        thread.start()
+    if optional:
+        filtered = tuple(filter(lambda file: len(file.licenses) == 0, data.files))
+    else:
+        filtered = data.files
 
-    for _ in threads:
-        file_queue.close()
-    file_queue.join()
+    if len(filtered) > 0:
+        check_scancode()
 
-    for thread in threads:
-        thread.join()
+    for results, file, _ in concurrent_pool_iter(detect_file, filtered):
+        if len(results) > 0:
+            file.licenses = file.licenses.union(results)
+            file.detectors.add('scancode-toolkit')

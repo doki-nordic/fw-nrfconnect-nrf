@@ -1,12 +1,15 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-from pathlib import Path
+'''
+Utility functions for handling licenses and license expressions.
+'''
+
 import re
 import yaml
-
+from pathlib import Path
 from data_structure import DataBaseClass, License
 
 
@@ -16,10 +19,12 @@ license_by_id: 'dict(License)' = dict()
 
 
 def is_spdx_license(id: str):
+    '''Returns True if id is in SPDX license list.'''
     return id.upper() in spdx_licenses
 
 
 def get_license(id: str) -> 'License|None':
+    '''Returns license information based on provided id.'''
     id = id.upper()
     if id in license_by_id:
         return license_by_id[id]
@@ -27,6 +32,7 @@ def get_license(id: str) -> 'License|None':
 
 
 def get_license_texts() -> 'list[License]':
+    '''Return list of all licenses from "license-texts.yaml" file'''
     return license_texts
 
 
@@ -34,6 +40,7 @@ LICENSE_EXPR_RE = re.compile(r'\s*([a-z0-9\.\-\:]+|\+|\)|\()\s*', re.IGNORECASE)
 
 
 def tokenize_license_expr(expr: str) -> 'list[str]|None':
+    '''Split license expression string into list of expression tokens.'''
     result = list()
     expr = expr.strip()
     while len(expr) > 0:
@@ -46,6 +53,16 @@ def tokenize_license_expr(expr: str) -> 'list[str]|None':
 
 
 class SPDXLicenseExprInfo(DataBaseClass):
+    '''License expression information parsed by get_spdx_license_expr_info.
+
+    Attributes:
+        expr          Original normalized expression string
+        friendly_expr User friendly version of the expression
+        valid         True if expression was correctly parsed
+        is_id_only    True if the expression contains actually just a single id
+        licenses      Set of normalized license identifiers used in this expression
+        or_present    True if 'OR' operator is in the expression
+    '''
     expr: str
     friendly_expr: str
     valid: bool
@@ -55,6 +72,7 @@ class SPDXLicenseExprInfo(DataBaseClass):
 
 
 def get_spdx_license_expr_info(expr: str) -> SPDXLicenseExprInfo:
+    '''Try to parse license expression.'''
     result = SPDXLicenseExprInfo()
     result.expr = expr.strip()
     result.friendly_expr = result.expr
@@ -87,6 +105,7 @@ def get_spdx_license_expr_info(expr: str) -> SPDXLicenseExprInfo:
 
 
 def load_data():
+    '''Load license information data from "spdx-licenses.yaml" and "license-texts.yaml" files.'''
 
     with open(Path(__file__).parent / 'data/spdx-licenses.yaml', 'r') as fd:
         data = yaml.safe_load(fd)

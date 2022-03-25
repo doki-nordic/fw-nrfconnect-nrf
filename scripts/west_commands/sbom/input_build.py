@@ -1,21 +1,23 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-from enum import Enum
+'''
+Get input files from an application build directory.
+'''
+
 import os
 import re
-from args import args
-
+from enum import Enum
 from pathlib import Path
-from data_structure import Data, FileInfo
 from west import log
-
+from args import args
+from data_structure import Data, FileInfo
 from common import SbomException, command_execute
 
 
-default_target = 'zephyr/zephyr.elf'
+DEFAULT_TARGET = 'zephyr/zephyr.elf'
 
 
 class FileType(Enum):
@@ -119,7 +121,8 @@ class InputBuild:
         return (explicit, implicit, order_only, phony)
 
 
-    def query_inputs_recursive(self, target: str, done: set = set(), inputs_tuple=None) -> 'set[str]':
+    def query_inputs_recursive(self, target: str, done: set = set(),
+                               inputs_tuple=None) -> 'set[str]':
         if inputs_tuple is None:
             explicit, implicit, _, _ = self.query_inputs(target)
         else:
@@ -143,14 +146,15 @@ class InputBuild:
 
 
     def verify_elf_inputs_in_map_file(self, map_file: Path, elf_inputs: 'set[str]'):
-        # TODO: read map file and check if all inputs provided by a map file are available in elf_inputs
+        # TODO: read map file and check if all inputs provided by a map file are in elf_inputs
         pass
 
 
     def verify_archive_inputs(self, archive_path, inputs):
-        arch_files = command_execute('ar', '-t', archive_path)  # TODO: implement 'ar' tool detection or input parameter
+        arch_files = command_execute(args.ar, '-t', archive_path)
         arch_files = arch_files.split('\n')
-        arch_files = (f.strip().replace('/', os.sep).replace('\\', os.sep).strip(os.sep) for f in arch_files)
+        arch_files = (f.strip().replace('/', os.sep).replace('\\', os.sep).strip(os.sep)
+                      for f in arch_files)
         arch_files = filter(lambda file: len(file.strip()) > 0, arch_files)
         for arch_file in arch_files:
             for input in inputs:
@@ -169,7 +173,7 @@ class InputBuild:
             return {archive_path}
         leafs = set()
         for input in archive_inputs:
-            input_path = self.build_dir / input
+            input_path = (self.build_dir / input).resolve()
             input_type = detect_file_type(input_path)
             if input_type == FileType.OTHER:
                 leafs.add(input_path)
@@ -184,7 +188,7 @@ class InputBuild:
             return {input_path}
         deps = self.deps[input]
         deps = deps.union(self.query_inputs_recursive(input))
-        return set(self.build_dir / x for x in deps)
+        return set((self.build_dir / x).resolve() for x in deps)
 
 
     def generate_from_target(self, target: str):
@@ -199,13 +203,14 @@ class InputBuild:
             raise SbomException(f'Cannot find map file for "{target}" '
                                 f'in build directory "{self.build_dir}". '
                                 f'Expected location "{map_file}".')
+        log.dbg(f'Map file: {map_file}')
 
         self.data.inputs.append(f'{target} from build directory {self.build_dir.resolve()}')
         elf_inputs = self.query_inputs_recursive(target)
         self.verify_elf_inputs_in_map_file(map_file, elf_inputs)
         leafs = set()
         for input in elf_inputs:
-            input_path = self.build_dir / input
+            input_path = (self.build_dir / input).resolve()
             input_type = detect_file_type(input_path)
             if input_type == FileType.ARCHIVE:
                 leafs = leafs.union(self.process_archive(input_path, input))
@@ -219,12 +224,41 @@ class InputBuild:
             self.data.files.append(file)
 
 
+def check_gnu_ar_command():
+    '''
+    Checks if "ar --version" works correctly. If not, raises exception with information
+    for user.
+    '''
+    try:
+        if args.ar is not None:
+            command_execute(args.ar, '--version', allow_stderr=True)
+            return
+    except Exception as ex:
+        raise SbomException(f'Cannot execute command "{args.ar}".\n'
+            f'Make sure that you have PATH pointing to that file.') from ex
+    other_names = ['arm-zephyr-eabi-ar', 'arm-none-eabi-ar', 'ar']
+    for name in other_names:
+        try:
+            command_execute(name, '--version', allow_stderr=True)
+            args.ar = name
+            return
+        except Exception:
+            pass
+    if args.ar is None:
+        raise SbomException(f'Cannot execute command "ar".\n'
+            f'Make sure that you have PATH pointing to that file.\n'
+            f'You can user "--ar=path/to/ar" to pass specific path to "ar".')
+    log.dbg(f'"ar" command detected: {args.ar}')
+
+
 def generate_input(data: Data):
     if args.build_dir is not None:
-        log.wrn('Note: It is an experimental functionality.')
+        log.wrn('Fetching input files from a build directory is experimental for now.')
+        check_gnu_ar_command()
         for build_dir, *targets in args.build_dir:
             if len(targets) == 0:
-                targets = [default_target]
+                targets = [DEFAULT_TARGET]
+            log.dbg(f'INPUT: build directory: {build_dir}, targets: {targets}')
             b = InputBuild(data, build_dir)
             for target in targets:
                 b.generate_from_target(target)

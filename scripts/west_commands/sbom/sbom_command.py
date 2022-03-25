@@ -1,20 +1,22 @@
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''The "sbom" extension command.'''
+'''
+The "sbom" extension command.
+'''
 
 import argparse
-import args
 import main
-from textwrap import dedent
+import args
 from west.commands import WestCommand
 
 
 class Sbom(WestCommand):
+    '''"west sbom" command extension class.'''
 
     def __init__(self):
-        super().__init__('sbom', args.command_description, args.command_help)
+        super().__init__('sbom', args.COMMAND_DESCRIPTION, args.COMMAND_HELP)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(

@@ -3,6 +3,10 @@
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Detector that detect license using provided cache database file.
+'''
+
 import json
 from args import args
 from data_structure import Data

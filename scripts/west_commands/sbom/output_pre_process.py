@@ -1,27 +1,39 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Pre-processing of data before it goes to the output.
+'''
 
 from data_structure import Data, License, LicenseExpr
 from license_utils import get_license, get_spdx_license_expr_info, is_spdx_license
 
 
 def pre_process(data: Data):
+    '''Do pre-processing of data for simpler usage by the output modules.'''
     # Sort files
     data.files.sort(key=lambda f: f.file_path)
     # Convert list of licenses to license expression for each file
     for file in data.files:
         licenses = file.licenses if len(file.licenses) > 0 else ['']
-        expr_items = list()
+        simple_expr_items = set()
+        or_expr_items = set()
+        repeated_expr_items = set()
         for license in licenses:
+            license = license.upper()
             info = get_spdx_license_expr_info(license)
-            if (not info.valid or info.or_present) and len(licenses) > 1:
-                expr_items.append(f'({license})')
+            if info.valid and not info.is_id_only and len(info.licenses) > 1:
+                repeated_expr_items = repeated_expr_items.union(info.licenses)
+            if not info.valid or info.or_present:
+                or_expr_items.add(license)
             else:
-                expr_items.append(license)
-        file.license_expr = ' AND '.join(sorted(expr_items))
+                simple_expr_items.add(license)
+        simple_expr_items -= repeated_expr_items
+        if len(or_expr_items) > 1 or len(simple_expr_items) > 0:
+            or_expr_items = { f'({x})' for x in or_expr_items }
+        file.license_expr = ' AND '.join(sorted(simple_expr_items.union(or_expr_items)))
     # Collect all used licenses and license expressions and put them into data.licenses
     used_licenses = dict()
     for file in data.files:
@@ -60,7 +72,6 @@ def pre_process(data: Data):
         if file.license_expr not in data.files_by_license:
             data.files_by_license[file.license_expr] = list()
         data.files_by_license[file.license_expr].append(file)
-
     # Sort licenses
     def lic_reorder(id: str):
         lic = data.licenses[id]

@@ -1,26 +1,32 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Input files from command line and/or a text file.
+'''
+
 import re
 import os
-from typing import Generator
 from pathlib import Path
-from args import args
+from typing import Generator
 from west import log, util
-from data_structure import Data, FileInfo
+from args import args
 from common import SbomException
+from data_structure import Data, FileInfo
 
 
 GLOB_PATTERN_START = re.compile(r'[\*\?\[]')
 
 
 def is_glob(glob: str) -> bool:
+    '''Returns True if provided string is a glob.'''
     return GLOB_PATTERN_START.search(glob) is not None
 
 
 def glob_with_abs_patterns(path: Path, glob: str) -> Generator:
+    '''Wrapper for Path.glob allowing absolute patterns in the glob input.'''
     glob_path = Path(glob)
     if glob_path.is_absolute():
         m = GLOB_PATTERN_START.search(glob)
@@ -34,6 +40,7 @@ def glob_with_abs_patterns(path: Path, glob: str) -> Generator:
 
 
 def resolve_globs(path: Path, globs: 'list[str]') -> 'set(Path)':
+    '''Resolves list of globs (optionally with "!" at the beginning) are returns a set of files.'''
     result = set()
     for glob in globs:
         if glob.startswith('!'):
@@ -55,6 +62,7 @@ def resolve_globs(path: Path, globs: 'list[str]') -> 'set(Path)':
 
 
 def generate_input(data: Data):
+    '''Generate input files from list of files/globs from command line and/or a text file.'''
     full_set = set()
 
     if args.input_files is not None:

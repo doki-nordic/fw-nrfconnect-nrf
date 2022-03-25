@@ -1,22 +1,26 @@
 #
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2022 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
+'''
+Parsing and utility functions for west sbom command arguments.
+'''
 
 import argparse
 from pathlib import Path
+from common import SbomException
 
-default_report_name = 'sbom_report.html'
 
-command_description = 'Create license report for application'
+DEFAULT_REPORT_NAME = 'sbom_report.html'
 
-command_help = '''
-Create license report for application
-TODO: longer help
+COMMAND_DESCRIPTION = 'Create license report for application'
+
+COMMAND_HELP = '''
+Create license report from source files.
 '''
 
-detectors_help = '''
+DETECTORS_HELP = '''
 spdx-tag
   Search for the SPDX-License-Identifier in the source code or the binary file.
   For guidelines, see:
@@ -53,6 +57,8 @@ class ArgsClass:
     output_cache_database: 'str|None'
     input_cache_database: 'str|None'
     processes: int
+    scancode: str
+    ar: str
     help_detectors: bool
 
 
@@ -69,25 +75,26 @@ def split_detectors_list(allowed_detectors: dict, text: str) -> 'list[str]':
     arr = split_arg_list(text)
     for name in arr:
         if name not in allowed_detectors:
-            raise Exception(f'Detector not found: {name}') #TODO: create our exception class for this tool
+            raise SbomException(f'Detector not found: {name}')
     return arr
 
 
 def add_arguments(parser: argparse.ArgumentParser):
+    '''Add sbom specific arguments for parsing.'''
     parser.add_argument('-d', '--build-dir', nargs='+', action='append',
                         help='Build input directory. You can provide this option more than once.')
     parser.add_argument('--input-files', nargs='+', action='append',
                         help='Input files. You can use globs (?, *, **) to provide more files. '
                              'You can start argument with the exclamation mark to exclude file '
-                             'that were already found starting from the last "--input-files".'
+                             'that were already found starting from the last "--input-files". '
                              'You can provide this option more than once.')
     parser.add_argument('--input-list-file', action='append',
                         help='Reads list of files from a file. Works the same as "--input-files". '
                              'with arguments from each line of the file.'
                              'You can provide this option more than once.')
-    parser.add_argument('--license-detectors', default='spdx-tag,full-text',
+    parser.add_argument('--license-detectors', default='spdx-tag,full-text,scancode-toolkit',
                         help='Comma separated list of enabled license detectors.')
-    parser.add_argument('--optional-license-detectors', default='',  # TODO: default scancode-toolkit
+    parser.add_argument('--optional-license-detectors', default='scancode-toolkit',
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
@@ -99,11 +106,16 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Input license database. The database is passed to the "cache-databe" detector')
     parser.add_argument('-n', '--processes', type=int, default=0,
                         help='Scan using n parallel processes. By default, the number of processes is equal to the number of processor cores.')
+    parser.add_argument('--scancode', default='scancode',
+                        help='Path to scancode-toolkit executable.')
+    parser.add_argument('--ar', default='ar',
+                        help='Path to GNU binutils ar program.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 
 
 def copy_arguments(source):
+    '''Copy arguments from source object to exported args variable.'''
     global args
     for name in source.__dict__:
         args.__dict__[name] = source.__dict__[name]
@@ -112,17 +124,17 @@ def copy_arguments(source):
 
 def init_args(allowed_detectors: dict):
     '''Parse, validate and postprocess arguments'''
-    global args, command_description
+    global args, COMMAND_DESCRIPTION
 
     if not args._initialized:
         # Parse command line arguments if running outside west
-        parser = argparse.ArgumentParser(description=command_description,
+        parser = argparse.ArgumentParser(description=COMMAND_DESCRIPTION,
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         add_arguments(parser)
         copy_arguments(parser.parse_args())
 
     if args.help_detectors:
-        print(detectors_help)
+        print(DETECTORS_HELP)
         exit()
 
     # Validate and postprocess arguments
@@ -132,7 +144,7 @@ def init_args(allowed_detectors: dict):
 
     if args.output_html == '':
         if args.build_dir is not None:
-            args.output_html = Path(args.build_dir[0][0]) / default_report_name
+            args.output_html = Path(args.build_dir[0][0]) / DEFAULT_REPORT_NAME
         else:
             args.output_html = None
 
