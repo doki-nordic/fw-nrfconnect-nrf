@@ -103,9 +103,11 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument('--output-cache-database', default=None,
                         help='Generate a license database for the files using scancode-toolkit')
     parser.add_argument('--input-cache-database', default=None,
-                        help='Input license database. The database is passed to the "cache-databe" detector')
+                        help='Input license database. The database is passed to the "cache-databe" '
+                             'detector')
     parser.add_argument('-n', '--processes', type=int, default=0,
-                        help='Scan using n parallel processes. By default, the number of processes is equal to the number of processor cores.')
+                        help='Scan using n parallel processes. By default, the number of processes '
+                             'is equal to the number of processor cores.')
     parser.add_argument('--scancode', default='scancode',
                         help='Path to scancode-toolkit executable.')
     parser.add_argument('--ar', default='ar',

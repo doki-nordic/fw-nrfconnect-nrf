@@ -67,14 +67,13 @@ def main():
 
         for generator_name, generator in generators.items():
             output_file = args.__dict__[f'output_{generator_name}']
-            t = dbg_time(f'GENERATOR: {generator_name}')
-            if output_file is None:
-                pass
-            elif type(generator) is str:
-                output_template.generate(data, output_file, Path(__file__).parent / generator)
-            else:
-                generator(data, output_file)
-            log.dbg(f'GENERATOR: Done in {t}s')
+            if output_file is not None:
+                t = dbg_time(f'GENERATOR: {generator_name}')
+                if callable(generator):
+                    generator(data, output_file)
+                else:
+                    output_template.generate(data, output_file, Path(__file__).parent / generator)
+                log.dbg(f'GENERATOR: Done in {t}s')
     except SbomException as e:
         log.die(str(e), exit_code=1)
 

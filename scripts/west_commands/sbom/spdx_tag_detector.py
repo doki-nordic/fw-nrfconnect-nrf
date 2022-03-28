@@ -14,7 +14,9 @@ from data_structure import Data, FileInfo
 from common import SbomException, concurrent_pool_iter
 
 
-SPDX_TAG_RE = re.compile(r'(?:^|[^a-zA-Z0-9\-])SPDX-License-Identifier\s*:\s*([a-zA-Z0-9 :\(\)\.\+\-]+)', re.IGNORECASE)
+SPDX_TAG_RE = re.compile(
+    r'(?:^|[^a-zA-Z0-9\-])SPDX-License-Identifier\s*:\s*([a-zA-Z0-9 :\(\)\.\+\-]+)',
+    re.IGNORECASE)
 
 
 def detect_file(file: FileInfo) -> 'set(str)':

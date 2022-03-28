@@ -45,7 +45,7 @@ try:
         old = yaml.safe_load(fd)
     update = old['_version'] != data.licenseListVersion
     print(f'Old version: {old["_version"]}')
-except:
+except Exception:
     print('Cannot read old version')
     update = True
 

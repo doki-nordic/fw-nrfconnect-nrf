@@ -41,11 +41,7 @@ class FileInfo(DataBaseClass):
 
 class License(DataBaseClass):
     ''' Contains license information
-    Attributes:        custom         True, if this any of the licenses used in this expression is a custom (not
-                       covered by SPDX standard) license
-        valid          True, if the expression can be correctly parsed
-        licenses       List of all licenses used in this expression
-
+    Attributes:
         is_expr        Does this object contains license expression, always False for this class.
         id             Upper case license identifier
         friendly_id    User friendly license identifier (mixed letter case)
@@ -88,13 +84,13 @@ class Data(DataBaseClass):
     ''' Root data object passed by the script pipeline.
 
     It is created once at the beginning and passed over a pipeline:
-    INPUT -> INPUT -> ... -> INPUT_POST_PROCESS -> DETECTOR -> DETECTOR -> ... -> 
+    INPUT -> INPUT -> ... -> INPUT_POST_PROCESS -> DETECTOR -> DETECTOR -> ... ->
     -> OUTPUT_PRE_PROCESS -> OUTPUT -> OUTPUT ...
 
     Attributes:
-        files            List of files. Inputs are responsible for filling this list. Input post process
-                         will remove duplicates. Detectors are responsible for detecting license for
-                         each file.
+        files            List of files. Inputs are responsible for filling this list. Input
+                         post-process will remove duplicates. Detectors are responsible for
+                         detecting license for each file.
         licenses         Dictionary of all licenses and expression. Key is normalized (upper case)
                          identifier of the license or the license expression.
         files_by_license Files groupped by license. Key is the same as in licenses attribute.

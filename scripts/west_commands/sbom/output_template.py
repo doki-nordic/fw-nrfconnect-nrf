@@ -10,6 +10,7 @@ Generates report using the Jinja2 templates.
 from pathlib import Path
 from typing import Any
 from jinja2 import Template
+from west import log
 from data_structure import Data
 
 
@@ -25,6 +26,7 @@ def data_to_dict(data: Any) -> dict:
 
 def generate(data: Data, output_file: 'Path|str', template_file: Path):
     '''Generate output_file from data using template_file.'''
+    log.dbg(f'Writing output to "{output_file}" using template "{template_file}"')
     with open(template_file, 'r') as fd:
         template_source = fd.read()
     t = Template(template_source)

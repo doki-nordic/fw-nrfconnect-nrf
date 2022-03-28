@@ -75,7 +75,7 @@ class InputBuild:
                     dep.add(m.group(1))
                     continue
                 m = EMPTY_LINE_RE.fullmatch(line)
-                assert(m is not None)
+                assert m is not None
 
 
     def query_inputs(self, target: str) -> 'tuple[set[str], set[str], set[str], bool]':
@@ -88,25 +88,25 @@ class InputBuild:
         order_only = set()
         phony = False
         while ln < len(lines):
-            assert(re.fullmatch(r'\S.*:', lines[ln]) != None)
+            assert re.fullmatch(r'\S.*:', lines[ln]) is not None
             ln += 1
             while ln < len(lines):
                 m = re.fullmatch(r'(\s*)(.*):(.*)', lines[ln])
-                assert(m != None)
+                assert m is not None
                 if m.group(1) == '':
                     break
                 ln += 1
                 ind1 = len(m.group(1))
                 dir = m.group(2)
-                phony = phony or (re.search(r'(\s|^)phony(\s|$)', m.group(3)) != None)
+                phony = phony or (re.search(r'(\s|^)phony(\s|$)', m.group(3)) is not None)
                 if dir == 'input':
                     inputs = True
                 else:
-                    assert(dir == 'outputs')
+                    assert dir == 'outputs'
                     inputs = False
                 while ln < len(lines):
                     m = re.fullmatch(r'(\s*)(\|?\|?)\s*(.*)', lines[ln])
-                    assert(m != None)
+                    assert m is not None
                     if len(m.group(1)) <= ind1:
                         break
                     ln += 1
@@ -139,7 +139,7 @@ class InputBuild:
             else:
                 sub_inputs_tuple = self.query_inputs(input)
                 phony = sub_inputs_tuple[3]
-                assert(phony)
+                assert phony
                 sub_result = self.query_inputs_recursive(input, done, sub_inputs_tuple)
                 result = result.union(sub_result)
         return result
@@ -150,7 +150,8 @@ class InputBuild:
         pass
 
 
-    def verify_archive_inputs(self, archive_path, inputs):
+    @staticmethod
+    def verify_archive_inputs(archive_path, inputs):
         arch_files = command_execute(args.ar, '-t', archive_path)
         arch_files = arch_files.split('\n')
         arch_files = (f.strip().replace('/', os.sep).replace('\\', os.sep).strip(os.sep)
@@ -178,7 +179,7 @@ class InputBuild:
             if input_type == FileType.OTHER:
                 leafs.add(input_path)
             else:
-                assert(input_type == FileType.OBJ)
+                assert input_type == FileType.OBJ
                 leafs = leafs.union(self.process_obj(input_path, input))
         return leafs
 

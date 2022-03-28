@@ -20,7 +20,6 @@ from west import log
 
 class SbomException(Exception):
     '''Exception class used by west sbom to show expected user friendly errors.'''
-    pass
 
 
 def command_execute(*cmd_args: 'tuple[str|Path]', cwd: 'str|Path|None' = None,
@@ -71,7 +70,8 @@ thread_executor = None
 executor_workers = None
 
 
-def concurrent_pool_iter(func: Callable, iterable: Iterable, use_process: bool=False, threshold: int=2):
+def concurrent_pool_iter(func: Callable, iterable: Iterable, use_process: bool=False,
+                         threshold: int=2):
     ''' Call a function for each item of iterable in a separate thread or process.
 
     Number of parallel executors will be determined by the CPU count or command line arguments.

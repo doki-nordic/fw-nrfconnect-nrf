@@ -8,6 +8,7 @@ Detector that detect license using provided cache database file.
 '''
 
 import json
+from west import log
 from args import args
 from data_structure import Data
 
@@ -18,6 +19,7 @@ def detect(data: Data, optional: bool):
         return
 
     with open(args.input_cache_database, 'r') as fd:
+        log.dbg(f'Loading cache database from {args.input_cache_database}')
         db = json.load(fd)
 
     for file in data.files:
