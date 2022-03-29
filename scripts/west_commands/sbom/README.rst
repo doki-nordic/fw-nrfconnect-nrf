@@ -1,4 +1,4 @@
-.. _sbom_script:
+.. _west_sbom:
 
 Software Bill of Materials
 ##########################
@@ -7,29 +7,39 @@ Software Bill of Materials
    :local:
    :depth: 2
 
-The Software bill of materials is a Python script that provide a list of used licenses for a build application or for specific files.
-The script can be used with the west tool.
+The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west sbom``.
+It provides a list of used licenses for an application build or the specific files.
 
 .. note::
-    The Software bill of materials script is experimental.
+    Generating list of licenses from an application build is experimental.
     The accuracy of detection is constantly verified.
     Both implementation and usage may change in the future.
+
 
 Overview
 ********
 
-The Software bill of materials script uses different types of detectors, depending on the configuration.
-For a description of the detectors, see :ref:`Detectors` section.
-The choice of detector will affect the detection speed and may also affect the detection coverage.
+The process of using the ``sbom`` command involves the following steps:
 
-It is possible to create a list of licenses both for the built application and for the specified directory.
+#. Create list of input files based on provided command line arguments,
+   for example, all source files used for building a specific application.
+   For details, see :ref:`west_sbom Specifying input`.
+
+#. Detect the license applied to each file,
+   for example, read `SPDX identifier`_ from ``SPDX-License-Identifier`` tag.
+   For details, see :ref:`west_sbom Detectors`.
+
+#. Create output report containing all the files and license information related to them,
+   for example, write a report file in HTML format.
+   For details, see :ref:`west_sbom Specifying output`.
+
 
 Requirements
 ************
 
-The script requires additional Python packages to be installed.
+The SBOM command requires additional Python packages to be installed.
 
-Use the following commands to install the requirements for each repository.
+Use the following command to install the requirements.
 
 .. tabs::
 
@@ -61,137 +71,208 @@ Use the following commands to install the requirements for each repository.
            pip3 install -r nrf/scripts/requirements-west-sbom.txt
 
 .. note::
-    The script uses the ``ScanCode Toolkit`` which requires additional dependencies to be installed on Linux system.
-    To install the required tools on Ubuntu run::
+    The ``sbom`` command uses the `Scancode-Toolkit`_ that requires additional dependencies to be installed on a Linux system.
+    To install the required tools on Ubuntu, run::
 
       sudo apt install python-dev bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
 
-    For more details see https://scancode-toolkit.readthedocs.io/en/latest/getting-started/install.html
+    For more details, see `Scancode-Toolkit Installation`_.
 
 
-Using the script
-****************
-
-See the script's help by running the following command::
-
-  west sbom -h
-
-Analysis of built application and report generation as html file::
-
-  west sbom -d <build-directory> --license-detectors <detector/s> --output-html <file-name.html>
-
-Analysis of selected files and report generation as html file::
-
-  west sbom --input-files <file1 file2> --license-detectors <detector/s> --output-html <file-name.html>
-
-Or by using the list of file::
-
-  west sbom --input-list-file <list-file.txt> --license-detectors <detector/s> --output-html <file-name.html>
-
-.. note::
-    You can use globs (?, *, **) to provide more files. For example::
-
-      west sbom --input-files src/**/* --license-detectors <detector/s> --output-html <file-name.html>
-
-    See the :ref:`specifying_input` section for more details.
-
-.. _Detectors:
-
-Detectors
-*********
-
-List of implemented detectors:
-
-* Detection based od spdx tags::
-
-  --license-detectors spdx-tag
-
-  Search for the SPDX-License-Identifier in the source code or the binary file.
-  For guidelines, see: https://spdx.github.io/spdx-spec/using-SPDX-short-identifiers-in-source-files
-
-* Full text detector::
-
-  --license-detectors full-text
-
-  Compare the contents of the license with the references that are stored in the database.
-
-* ScanCode Toolkit::
-
-  --license-detectors scancode-toolkit
-
-  License detection by scancode-toolkit.
-  For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
-
-* Cache database::
-
-  --license-detectors cache-database --input-cache-database <cache-file.json>
-
-  License detection is based on a predefined database.
-  The license type is obtained from the database.
-
-  .. note::
-    You can generate the database base on e.g scancode-toolkit detector by running following command::
-
-      west sbom --input-files <files ..> --license-detectors scancode-toolkit --output-cache-database <file-name.json>
-
-.. _specifying_input:
-
-Specifying input
-****************
-
-* Application BOM generated from build directory::
-
-    -d build_directory
-
-* List of files::
-
-  --input-files file1 file2 ...
-
-  Each argument of this option can contain globs as defined by:
-  https://docs.python.org/3/library/pathlib.html#pathlib.Path.glob
-
-  For example, if you want to include all ``.c`` files from current directory
-  and all subdirectories recursively::
-
-  --input-files '**/*.c'
-
-  Remember to put correct quotes around globs, to make sure that the glob will
-  not be resolved by the shell, but it will go untouched to the script.
-
-  You can prefix pattern with the exclamation mark ``!`` to exclude some files.
-  Patterns are evaluated from left to right, so ``!`` will exclude files from
-  patterns before it, but not after. For example, if you want to include all
-  ``.c`` files from current directory and all subdirectories recursively, except
-  all ``main.c`` files.:
-
-  --input-files '**/*.c' '!**/main.c'
-
-* File that contains list of files::
-
-  --input-list-file list_file
-
-  It does the same as ``--input-files``, but reads files and patterns from
-  a file (one file or pattern per line). Files and patterns contained in the
-  list file are relative to the list file location (not current directory).
-  Comments starting with ``#`` are allowed.
-
-Each of the above input options can be specified multiple times to provide
-more input for the report generation, e.g. produce report for two applications.
-They can be also mixed, e.g. produce report for the application and some
-directory.
-
-Specifying output
+Using the command
 *****************
 
-* HTML report::
+The following examples demonstrate the basic usage of the ``sbom`` command.
 
-  --output-html <file-name.html>
+* To see the help, run the following command:
 
-  Generate output HTML report.
+  .. code-block:: bash
 
-* Cache database::
+    west sbom -h
 
-  --output-cache-database <file.json>
+* To get an analysis of the built application and generate a report to the ``sbom_report.html`` file in the build directory, run:
 
-  Generate output json cache database.
-  The file can be used as reference database for the ``cache-database`` detector and also for custom purposes.
+  .. parsed-literal::
+     :class: highlight
+
+      west sbom -d *build-directory*
+
+* To analyze the selected files and generate a report to an HTML file, run:
+
+  .. parsed-literal::
+     :class: highlight
+
+     west sbom --input-files *file1* *file2* --output-html *file-name.html*
+
+
+.. _west_sbom Specifying input:
+
+Specifying input
+================
+
+You can specify all input options several times to provide more input for the report generation, for example, generate a report for two applications.
+You can also mix them, for example, to generate a report for the application and some directory.
+
+
+* To get an application SBOM from a build directory, use the following option:
+
+  .. code-block:: bash
+
+     -d build_directory
+
+  You have to first build the ``build_directory`` with the ``west build`` command using ``Ninja`` as the underlying build tool (default).
+
+  This option requires the GNU ``ar`` tool.
+  If you do not have it on your ``PATH``, you can pass it with the ``--ar`` option, for example:
+
+  .. code-block:: bash
+
+     --ar ~/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar
+
+  The command searches for the files used during the build of :file:`zephyr/zephyr.elf` target.
+  It also requires the :file:`zephyr/zephyr.map` file created by the linker.
+
+  .. note::
+      All the files that are not dependencies of the :file:`zephyr/zephyr.elf` target are not taken as an input.
+      If the :file:`.elf` file is modified after the linking, the modifications are not applied.
+
+  If your build directory contains more than one output target or it has a different name,
+  you can add targets after the ``build_directory``.
+  If the :file:`.map` file and the associated file:`.elf` file have different names,
+  you can provide the :file:`.map` file after the ``:`` sign following the target,
+  for example:
+
+  .. parsed-literal::
+     :class: highlight
+
+     -d build_directory *target1.elf* *target2.elf*:*file2.map*
+
+  .. note::
+      The ``-d`` option is experimental.
+
+* You can provide a list of input files directly on the command line:
+
+  .. parsed-literal::
+     :class: highlight
+
+     --input-files *file1* *file2* ...
+
+  Each argument of this option can contain globs as defined by `Python's Path.glob`_ with two additions:
+  exclamation mark ``!`` to exclude files and absolute paths.
+
+  For example, if you want to include all :file:`.c` files from the current directory and all subdirectories recursively:
+
+  .. code-block:: bash
+
+     --input-files '**/*.c'
+
+  Make sure to have correct quotes around globs, to not have the glob resolved by your shell, and go untouched to the command.
+
+  You can prefix a pattern with the exclamation mark ``!`` to exclude some files.
+  Patterns are evaluated from left to right, so ``!`` excludes files from patterns before it, but not after.
+  For example, if you want to include all :file:`.c` files from the current directory and all subdirectories recursively except all :file:`main.c` files, run:
+
+  .. code-block:: bash
+
+     --input-files '**/*.c' '!**/main.c'
+
+* You can read a list of input files from a file:
+
+  .. parsed-literal::
+     :class: highlight
+
+     --input-list-file *list_file*
+
+  It does the same as ``--input-files``, but it reads files and patterns from a file (one file or pattern per line).
+  Files and patterns contained in the list file are relative to the list file location (not the current directory).
+  Comments starting with a ``#`` character are allowed.
+
+
+.. _west_sbom Specifying output:
+
+Specifying output
+=================
+
+You can specify the format of the report output using the ``output`` argument.
+
+* To generate a report in HTML format:
+
+  .. parsed-literal::
+     :class: highlight
+
+     --output-html *file-name.html*
+
+  If you use ``-d`` option, you do not need to specify the report format.
+  The :file:`sbom_report.html` file is generated in your build directory
+  (the first one if you specify more than one build directory).
+
+* To generate a cache database:
+
+  .. parsed-literal::
+     :class: highlight
+
+     --output-cache-database *cache-database.json*
+
+  For details, see ``cache-database`` detector.
+
+
+.. _west_sbom Detectors:
+
+Detectors
+=========
+
+The ``sbom`` command has the following detectors implemented:
+
+* ``spdx-tag`` - search for the ``SPDX-License-Identifier`` in the source code or the binary file.
+  For guidelines, see `SPDX identifier`_. Enabled by default.
+
+* ``full-text`` - compare the contents of the source file with a small database of reference texts.
+  The database is part of the ``sbom`` command. Enabled by default.
+
+* ``scancode-toolkit`` - license detection by the `Scancode-Toolkit`_. Enabled and optional by default.
+
+  If the ``scancode`` command is not on your ``PATH``, you can use the ``--scancode`` option to provide it, for example:
+
+  .. code-block:: bash
+
+     --scancode ~/scancode-toolkit/scancode
+
+  This detector is optional because is significantly slower than the others.
+
+* ``cache-database`` - use license information detected and cached earlier in the cache database file.
+  Disabled by default.
+
+  You have to provide the cache database file using the following argument:
+
+  .. parsed-literal::
+     :class: highlight
+
+     --input-cache-database *cache-database.json*
+
+  Each database entry has a path relative to the west workspace directory, a hash, and a list of detected licenses.
+  If the file under detection has the same path and hash, the list of licenses from the database is used.
+
+  .. note::
+     To generate the database based on, for example the scancode-toolkit detector, run the following command:
+
+     .. parsed-literal::
+        :class: highlight
+
+        west sbom --input-files *files ...* --license-detectors scancode-toolkit --output-cache-database *cache-database.json*
+
+If you prefer a non-default set of detectors, you can provide a list of comma-separated detectors with the ``--license-detectors`` option, for example:
+
+  .. code-block:: bash
+
+     --license-detectors spdx-tag,scancode-toolkit
+
+Some of the detectors are optional, which means that they are not executed for a file that
+already has licenses detected by some other previously executed detector.
+Detectors are executed from left to right using a list provided by the ``--license-detectors``.
+
+  .. code-block:: bash
+
+     --optional-license-detectors scancode-toolkit
+
+Some detectors may run in parallel on all available CPU cores, which speeds up the detection time.
+Use ``-n`` option to limit number of parallel threads or processes.
