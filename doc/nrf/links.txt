@@ -839,6 +839,7 @@
 
 .. _`SPDX tool`: https://spdx.dev/
 .. _`SPDX identifier`: https://spdx.dev/ids/
+.. _`SPDX License List`: https://spdx.org/licenses/
 
 .. _`Scancode-Toolkit`: https://scancode-toolkit.readthedocs.io/
 .. _`Scancode-Toolkit Installation`: https://scancode-toolkit.readthedocs.io/en/stable/getting-started/install.html

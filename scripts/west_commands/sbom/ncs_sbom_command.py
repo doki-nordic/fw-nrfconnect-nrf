@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''
-The "sbom" extension command.
+The "ncs-sbom" extension command.
 '''
 
 import argparse
@@ -12,11 +12,11 @@ import args
 from west.commands import WestCommand
 
 
-class Sbom(WestCommand):
-    '''"west sbom" command extension class.'''
+class NcsSbom(WestCommand):
+    '''"west ncs-sbom" command extension class.'''
 
     def __init__(self):
-        super().__init__('sbom', args.COMMAND_DESCRIPTION, args.COMMAND_HELP)
+        super().__init__('ncs-sbom', args.COMMAND_DESCRIPTION, args.COMMAND_HELP)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(

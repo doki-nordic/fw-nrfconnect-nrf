@@ -8,8 +8,8 @@ Utility functions for handling licenses and license expressions.
 '''
 
 import re
-import yaml
 from pathlib import Path
+import yaml
 from data_structure import DataBaseClass, License
 
 

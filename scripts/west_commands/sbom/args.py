@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 '''
-Parsing and utility functions for west sbom command arguments.
+Parsing and utility functions for west ncs-sbom command arguments.
 '''
 
 import argparse
@@ -56,9 +56,11 @@ class ArgsClass:
     output_html: 'str|None'
     output_cache_database: 'str|None'
     input_cache_database: 'str|None'
+    allowed_in_map_file_only: 'str'
     processes: int
     scancode: str
-    ar: str
+    ar: 'str|None'
+    ninja: 'str|None'
     help_detectors: bool
 
 
@@ -80,7 +82,7 @@ def split_detectors_list(allowed_detectors: dict, text: str) -> 'list[str]':
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    '''Add sbom specific arguments for parsing.'''
+    '''Add ncs-sbom specific arguments for parsing.'''
     parser.add_argument('-d', '--build-dir', nargs='+', action='append',
                         help='Build input directory. You can provide this option more than once.')
     parser.add_argument('--input-files', nargs='+', action='append',
@@ -92,33 +94,47 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Reads list of files from a file. Works the same as "--input-files". '
                              'with arguments from each line of the file.'
                              'You can provide this option more than once.')
-    parser.add_argument('--license-detectors', default='spdx-tag,full-text,scancode-toolkit',
+    parser.add_argument('--license-detectors',
+                        default='spdx-tag,full-text,external-file,scancode-toolkit',
                         help='Comma separated list of enabled license detectors.')
     parser.add_argument('--optional-license-detectors', default='scancode-toolkit',
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
-    parser.add_argument('--output-html', default='',
+    parser.add_argument('--output-html', default=None,
                         help='Generate output HTML report.')
+    parser.add_argument('--output-spdx', default=None,
+                        help='Generate output SPDX report.')
     parser.add_argument('--output-cache-database', default=None,
                         help='Generate a license database for the files using scancode-toolkit')
     parser.add_argument('--input-cache-database', default=None,
                         help='Input license database. The database is passed to the "cache-databe" '
                              'detector')
+    parser.add_argument('--allowed-in-map-file-only',
+                        default='libgcc.a,'
+                                'libc_nano.a,libc++_nano.a,libm_nano.a,'
+                                'libc.a,libc++.a,libm.a',
+                        help='Comma separated list of file names which can be detected in a map '
+                             'file, but not visible in the build system. Usually, automatically '
+                             'linked toolchain libraries or libraries linked by specifying custom '
+                             'linker options.')
     parser.add_argument('-n', '--processes', type=int, default=0,
                         help='Scan using n parallel processes. By default, the number of processes '
                              'is equal to the number of processor cores.')
     parser.add_argument('--scancode', default='scancode',
                         help='Path to scancode-toolkit executable.')
-    parser.add_argument('--ar', default='ar',
-                        help='Path to GNU binutils ar program.')
+    parser.add_argument('--ar', default=None,
+                        help='Path to GNU binutils "ar" executable. '
+                             'By default, it will be automatically detected.')
+    parser.add_argument('--ninja', default=None,
+                        help='Path to "ninja" executable. '
+                             'By default, it will be automatically detected.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 
 
 def copy_arguments(source):
     '''Copy arguments from source object to exported args variable.'''
-    global args
     for name in source.__dict__:
         args.__dict__[name] = source.__dict__[name]
     args._initialized = True
@@ -126,7 +142,6 @@ def copy_arguments(source):
 
 def init_args(allowed_detectors: dict):
     '''Parse, validate and postprocess arguments'''
-    global args, COMMAND_DESCRIPTION
 
     if not args._initialized:
         # Parse command line arguments if running outside west
@@ -143,12 +158,18 @@ def init_args(allowed_detectors: dict):
     args.license_detectors = split_detectors_list(allowed_detectors, args.license_detectors)
     args.optional_license_detectors = set(split_detectors_list(allowed_detectors,
                                                                args.optional_license_detectors))
+    args.allowed_in_map_file_only = set(split_arg_list(args.allowed_in_map_file_only))
 
-    if args.output_html == '':
-        if args.build_dir is not None:
-            args.output_html = Path(args.build_dir[0][0]) / DEFAULT_REPORT_NAME
-        else:
-            args.output_html = None
+    # Use default build directory if exists and there is no other input
+    if (args.build_dir is None
+            and (args.input_files is None or len(args.input_files) == 0)
+            and (args.input_list_file is None or len(args.input_list_file) == 0)):
+        from input_build import get_default_build_dir # Avoid circular import
+        args.build_dir = [[get_default_build_dir()]]
+
+    # By default, place HTML output in the build directory
+    if (args.output_html is None) and (args.build_dir is not None):
+        args.output_html = Path(args.build_dir[0][0]) / DEFAULT_REPORT_NAME
 
 
 args: 'ArgsClass' = ArgsClass()

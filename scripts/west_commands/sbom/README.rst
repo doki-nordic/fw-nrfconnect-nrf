@@ -7,7 +7,7 @@ Software Bill of Materials
    :local:
    :depth: 2
 
-The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west sbom``.
+The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west ncs-sbom``.
 It provides a list of used licenses for an application build or the specific files.
 
 .. note::
@@ -15,11 +15,10 @@ It provides a list of used licenses for an application build or the specific fil
     The accuracy of detection is constantly verified.
     Both implementation and usage may change in the future.
 
-
 Overview
 ********
 
-The process of using the ``sbom`` command involves the following steps:
+The process of using the ``ncs-sbom`` command involves the following steps:
 
 #. Create list of input files based on provided command line arguments,
    for example, all source files used for building a specific application.
@@ -32,7 +31,6 @@ The process of using the ``sbom`` command involves the following steps:
 #. Create output report containing all the files and license information related to them,
    for example, write a report file in HTML format.
    For details, see :ref:`west_sbom Specifying output`.
-
 
 Requirements
 ************
@@ -50,7 +48,7 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install -r nrf/scripts/requirements-west-ncs-sbom.txt
 
    .. group-tab:: Linux
 
@@ -59,7 +57,7 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install --user -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install --user -r nrf/scripts/requirements-west-ncs-sbom.txt
 
    .. group-tab:: macOS
 
@@ -68,42 +66,40 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install -r nrf/scripts/requirements-west-ncs-sbom.txt
 
 .. note::
-    The ``sbom`` command uses the `Scancode-Toolkit`_ that requires additional dependencies to be installed on a Linux system.
+    The ``ncs-sbom`` command uses the `Scancode-Toolkit`_ that requires additional dependencies to be installed on a Linux system.
     To install the required tools on Ubuntu, run::
 
       sudo apt install python-dev bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
 
     For more details, see `Scancode-Toolkit Installation`_.
 
-
 Using the command
 *****************
 
-The following examples demonstrate the basic usage of the ``sbom`` command.
+The following examples demonstrate the basic usage of the ``ncs-sbom`` command.
 
 * To see the help, run the following command:
 
   .. code-block:: bash
 
-    west sbom -h
+    west ncs-sbom -h
 
 * To get an analysis of the built application and generate a report to the ``sbom_report.html`` file in the build directory, run:
 
   .. parsed-literal::
      :class: highlight
 
-      west sbom -d *build-directory*
+      west ncs-sbom -d *build-directory*
 
 * To analyze the selected files and generate a report to an HTML file, run:
 
   .. parsed-literal::
      :class: highlight
 
-     west sbom --input-files *file1* *file2* --output-html *file-name.html*
-
+     west ncs-sbom --input-files *file1* *file2* --output-html *file-name.html*
 
 .. _west_sbom Specifying input:
 
@@ -113,7 +109,6 @@ Specifying input
 You can specify all input options several times to provide more input for the report generation, for example, generate a report for two applications.
 You can also mix them, for example, to generate a report for the application and some directory.
 
-
 * To get an application SBOM from a build directory, use the following option:
 
   .. code-block:: bash
@@ -121,31 +116,16 @@ You can also mix them, for example, to generate a report for the application and
      -d build_directory
 
   You have to first build the ``build_directory`` with the ``west build`` command using ``Ninja`` as the underlying build tool (default).
+  The build must be successful.
+  Any change in the application configuration may affect the results, so always rebuild it after reconfiguration and before calling the ``west ncs-sbom``.
 
-  This option requires the GNU ``ar`` tool.
-  If you do not have it on your ``PATH``, you can pass it with the ``--ar`` option, for example:
+  You can skip this option if you are in the application directory and you have a default ``build`` directory there - the same way as in ``west build`` command.
 
-  .. code-block:: bash
-
-     --ar ~/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar
-
-  The command searches for the files used during the build of :file:`zephyr/zephyr.elf` target.
-  It also requires the :file:`zephyr/zephyr.map` file created by the linker.
+  The :ref:`west_sbom Extracting from build` contains a details how a list of files in extracted from a build directory.
 
   .. note::
       All the files that are not dependencies of the :file:`zephyr/zephyr.elf` target are not taken as an input.
       If the :file:`.elf` file is modified after the linking, the modifications are not applied.
-
-  If your build directory contains more than one output target or it has a different name,
-  you can add targets after the ``build_directory``.
-  If the :file:`.map` file and the associated file:`.elf` file have different names,
-  you can provide the :file:`.map` file after the ``:`` sign following the target,
-  for example:
-
-  .. parsed-literal::
-     :class: highlight
-
-     -d build_directory *target1.elf* *target2.elf*:*file2.map*
 
   .. note::
       The ``-d`` option is experimental.
@@ -158,7 +138,7 @@ You can also mix them, for example, to generate a report for the application and
      --input-files *file1* *file2* ...
 
   Each argument of this option can contain globs as defined by `Python's Path.glob`_ with two additions:
-  exclamation mark ``!`` to exclude files and absolute paths.
+  support for absolute paths and exclamation mark ``!`` to exclude files.
 
   For example, if you want to include all :file:`.c` files from the current directory and all subdirectories recursively:
 
@@ -202,6 +182,8 @@ You can specify the format of the report output using the ``output`` argument.
 
      --output-html *file-name.html*
 
+  :ref:`west_sbom HTML report overview` provides more details about the report.
+
   If you use ``-d`` option, you do not need to specify the report format.
   The :file:`sbom_report.html` file is generated in your build directory
   (the first one if you specify more than one build directory).
@@ -215,19 +197,18 @@ You can specify the format of the report output using the ``output`` argument.
 
   For details, see ``cache-database`` detector.
 
-
 .. _west_sbom Detectors:
 
 Detectors
 =========
 
-The ``sbom`` command has the following detectors implemented:
+The ``ncs-sbom`` command has the following detectors implemented:
 
 * ``spdx-tag`` - search for the ``SPDX-License-Identifier`` in the source code or the binary file.
   For guidelines, see `SPDX identifier`_. Enabled by default.
 
 * ``full-text`` - compare the contents of the source file with a small database of reference texts.
-  The database is part of the ``sbom`` command. Enabled by default.
+  The database is part of the ``ncs-sbom`` command. Enabled by default.
 
 * ``scancode-toolkit`` - license detection by the `Scancode-Toolkit`_. Enabled and optional by default.
 
@@ -238,6 +219,28 @@ The ``sbom`` command has the following detectors implemented:
      --scancode ~/scancode-toolkit/scancode
 
   This detector is optional because is significantly slower than the others.
+
+* ``external-file`` - search for license information in an external file. Enabled by default.
+
+  The external file has the following properties:
+
+    * It is located in the same directory or any of the parent directories of the file under detection.
+    * Its name contains ``LICENSE``, ``LICENCE`` or ``COPYING`` (case insensitive).
+    * It has a ``SPDX-License-Identifier`` tag.
+    * It has one or more ``NCS-SBOM-Apply-To-File`` tags containing file paths or globs (as defined by the `Python's Path.glob`_).
+      They are relative to the external file.
+
+  If any of the ``NCS-SBOM-Apply-To-File`` tags matches the file under detection, the license from the SPDX tag is used, for example:
+
+  .. code-block:: text
+
+     /* The following lines will apply Nordic 5-Clause license to all ".a" files
+      * and ".lib" files in the "lib" directory and all its subdirectories.
+      *
+      * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+      * NCS-SBOM-Apply-To-File: lib/**/*.a
+      * NCS-SBOM-Apply-To-File: lib/**/*.lib
+      */
 
 * ``cache-database`` - use license information detected and cached earlier in the cache database file.
   Disabled by default.
@@ -258,7 +261,7 @@ The ``sbom`` command has the following detectors implemented:
      .. parsed-literal::
         :class: highlight
 
-        west sbom --input-files *files ...* --license-detectors scancode-toolkit --output-cache-database *cache-database.json*
+        west ncs-sbom --input-files *files ...* --license-detectors scancode-toolkit --output-cache-database *cache-database.json*
 
 If you prefer a non-default set of detectors, you can provide a list of comma-separated detectors with the ``--license-detectors`` option, for example:
 
@@ -276,3 +279,81 @@ Detectors are executed from left to right using a list provided by the ``--licen
 
 Some detectors may run in parallel on all available CPU cores, which speeds up the detection time.
 Use ``-n`` option to limit number of parallel threads or processes.
+
+.. _west_sbom HTML report overview:
+
+HTML report overview
+********************
+
+The HTML report has following structure:
+
+* Summary of the report. It contains:
+
+   * At the beginning are notes.
+     They will give you some general information that you should pay attention while reading the report.
+   * The list of inputs.
+     It shows from where this report takes the files.
+   * The list of licenses.
+     It contains all licenses detected in the input files.
+   * The list of added license texts.
+     If a license is not in the `SPDX License List`_ and we have it in our internal database,
+     the license text will be added to the report.
+
+  You can click links in the summary to get more details about specific item.
+
+* List of files without any license information or with license information that cannot be detected automatically.
+  You have to investigate them manually to get the license information.
+
+* Details about each detected license:
+
+   * License identifier
+   * Information if it is a standard SPDX license
+   * License name if available
+   * Link to license text or more details if available
+   * All files from the input covered by this license
+
+* License texts added to this report.
+
+.. _west_sbom Extracting from build:
+
+Extracting list of files from a build directory
+***********************************************
+
+The ``ncs-sbom`` extracts a list of files from a build directory by querying the ``ninja`` about its targets and dependencies.
+
+The entry point is the ``zephyr/zephyr.elf`` target.
+The script asks ``ninja`` for all input targets of the ``zephyr/zephyr.elf`` target.
+Next, it asks for all input targets of the previously extracted input targets,
+and so on until it reaches all leaves in the dependency tree.
+The result is a list of all the leaves.
+
+You can change the target or specify multiple targets by adding them after the build directory in the ``-d`` option, for example:
+
+.. parsed-literal::
+   :class: highlight
+
+   -d build_directory *target1.elf* *target2.elf*
+
+Two redundant methods for increasing the correctness of the above algorithm are implemented:
+
+* Each library is examined using the GNU ``ar`` tool.
+  If the list of files returned by the GNU ``ar`` tool is covered by the list returned from the ``ninja``,
+  the list is assumed to be valid.
+  Otherwise, the library is assumed to be a leaf, so it is shown in the report and its inputs are not analyzed further.
+
+* The ``ncs-sbom`` pareses the :file:`.map` file created during the ``zephyr/zephyr.elf`` linking.
+  It gives a list of all object files and libraries linked into ``zephyr/zephyr.elf``.
+  The script ends with a fatal error if some file in the :file:`.map` file is not visible by the ``ninja``.
+
+  Exceptions are the runtime and standard libraries.
+  You can specify the list of exceptions with the ``--allowed-in-map-file-only`` option.
+  By default, it contains a few common names for the runtime and standard libraries.
+
+  If the :file:`.map` file and the associated :file:`.elf` file have different names,
+  you can provide the :file:`.map` file after the ``:`` sign following the target,
+  for example:
+
+  .. parsed-literal::
+     :class: highlight
+
+     -d build_directory *target.elf*:*file.map*

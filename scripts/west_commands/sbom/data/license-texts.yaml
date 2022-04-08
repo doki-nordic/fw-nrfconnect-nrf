@@ -48,7 +48,7 @@
     LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-- id: LicenseRef-BSD-1-Clause-SEGGER-D76B710A-458E-46E4-BEBD-EDB3A942146C
+- id: LicenseRef-west-ncs-sbom-BSD-1-Clause-SEGGER
   name: BSD 1-Clause License (SEGGER-Specific)
   text: |
     Redistribution and use in source and binary forms, with or
@@ -195,6 +195,29 @@
     OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
+- id: Xnet
+  text: |
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
+
+    This agreement shall be governed in all respects by the laws of the State
+    of California and by the laws of the United States of America.
+
 - id: MIT
   text: |
     Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -235,8 +258,39 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 
-- id: LicenseRef-ARM-9AC07406-5A40-4D52-A67D-A3374F3BDA4C
-  name: ARM Object Code and Header Files License, v1.0 Redistribution
+- id: LicenseRef-west-ncs-sbom-ARM-obj-and-header
+  name: ARM Object Code and Header Files License
+  text: |
+    Version 1.0
+
+    Redistribution.
+
+    Redistribution and use of object code, header files, and
+    documentation, without modification, are permitted provided that the following
+    conditions are met:
+    1) Redistributions must reproduce the above copyright notice and the
+      following disclaimer in the documentation and/or other materials
+      provided with the distribution.
+    2) Unless to the extent explicitly permitted by law, no reverse
+      engineering, decompilation, or disassembly of is permitted.
+    3) Redistribution and use is permitted solely for the purpose of
+      developing or executing applications that are targeted for use
+      on an ARM-based product.
+
+    DISCLAIMER. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+    CONTRIBUTORS "AS IS." ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT
+    NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT,
+    AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+    COPYRIGHT HOLDERS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+    INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+- id: LicenseRef-west-ncs-sbom-ARM-obj-and-header
+  name: ARM Object Code and Header Files License
   text: |
     Redistribution and use of object code, header files, and documentation, without
     modification, are permitted provided that the following conditions are met:
@@ -286,7 +340,7 @@
     IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
     OF SUCH DAMAGE.
 
-- id: LicenseRef-BSD-3-Clause-Intel-F438A16F-DDC6-41CC-87BE-F1BE8A937F84
+- id: LicenseRef-west-ncs-sbom-BSD-3-Clause-Intel
   name: Variant of BSD-3-Clause license with "Intel Corporation" as a copyright holder.
   text: |
     Redistribution and use in source and binary forms, with or without
@@ -315,7 +369,7 @@
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-- id: GPL-3.0-or-later
+- id: GPL-3.0-or-later WITH GCC-exception-3.1
   text: |
     This file is part of GCC.
     GCC is free software; you can redistribute it and/or modify
@@ -348,7 +402,7 @@
     NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
     WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-- id: LicenseRef-iperf-BSD-3-Clause-622EB85C-AC8A-4EC6-9690-0E44D3C0193F
+- id: LicenseRef-west-ncs-sbom-iperf-BSD-3-Clause
   detect-pattern: |
     iperf, Copyright <regex>.{1,1300}</regex>
     This code is distributed under a BSD style license, see the LICENSE

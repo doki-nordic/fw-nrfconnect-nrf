@@ -9,11 +9,13 @@ For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 '''
 
 import json
+import re
 from tempfile import NamedTemporaryFile
 from west import log
-from data_structure import Data, FileInfo
+from data_structure import Data, FileInfo, License
 from args import args
 from common import SbomException, command_execute, concurrent_pool_iter
+from license_utils import is_spdx_license
 
 
 def check_scancode():
@@ -28,7 +30,7 @@ def check_scancode():
             f'not available on PATH.') from ex
 
 
-def detect_file(file: FileInfo) -> 'set(str)':
+def run_scancode(file: FileInfo) -> 'set(str)':
     '''Execute scancode and get license identifier from its results.'''
     with NamedTemporaryFile(mode="w+") as output_file:
         command_execute(args.scancode, '-cl',
@@ -38,14 +40,7 @@ def detect_file(file: FileInfo) -> 'set(str)':
                         '--quiet',
                         file.file_path, allow_stderr=True)
         output_file.seek(0)
-        result = json.loads(output_file.read())
-        licenses = set()
-        for i in result['files'][0]['licenses']:
-            if i['key'] != 'unknown-spdx':
-                licenses.add(i['key'])
-            else:
-                log.wrn(f'Unknown spdx tag, file: {file.file_path}')
-        return licenses
+        return json.loads(output_file.read())
 
 
 def detect(data: Data, optional: bool):
@@ -59,7 +54,54 @@ def detect(data: Data, optional: bool):
     if len(filtered) > 0:
         check_scancode()
 
-    for results, file, _ in concurrent_pool_iter(detect_file, filtered):
-        if len(results) > 0:
-            file.licenses = file.licenses.union(results)
+    for result, file, _ in concurrent_pool_iter(run_scancode, filtered):
+        for i in result['files'][0]['licenses']:
+
+            friendly_id = ''
+            if 'spdx_license_key' in i and i['spdx_license_key'] != '':
+                friendly_id = i['spdx_license_key']
+            elif 'key' in i and i['key'] != '':
+                friendly_id = i['key']
+            id = friendly_id.upper()
+            if id == 'UNKNOWN-SPDX' or id == 'LICENSEREF-SCANCODE-UNKNOWN-SPDX':
+                friendly_id = re.sub(r'SPDX-License-Identifier:', '', i['matched_text'],
+                                     flags=re.I).strip()
+                id = friendly_id.upper()
+            if id == '':
+                log.wrn(f'Invalid response from scancode-toolkit, file: {file.file_path}')
+                continue
+
+            file.licenses.add(id)
             file.detectors.add('scancode-toolkit')
+
+            if not is_spdx_license(id):
+                if 'name' in i:
+                    name = i['name']
+                elif 'short_name' in i:
+                    name = i['short_name']
+                else:
+                    name = None
+
+                if 'spdx_url' in i:
+                    url = i['spdx_url']
+                elif 'reference_url' in i:
+                    url = i['reference_url']
+                elif 'scancode_text_url' in i:
+                    url = i['scancode_text_url']
+                else:
+                    url = None
+
+                if id in data.licenses:
+                    license = data.licenses[id]
+                    if license.is_expr:
+                        continue
+                else:
+                    license = License()
+                    data.licenses[id] = license
+                    license.id = id
+                    license.friendly_id = friendly_id
+                if license.name is None:
+                    license.name = name
+                if license.url is None:
+                    license.url = url
+                license.detectors.add('scancode-toolkit')

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 '''
-Common utility functions used by west sbom command.
+Common utility functions used by west ncs-sbom command.
 '''
 
 import os
@@ -19,7 +19,7 @@ from west import log
 
 
 class SbomException(Exception):
-    '''Exception class used by west sbom to show expected user friendly errors.'''
+    '''Exception class used by west ncs-sbom to show expected user friendly errors.'''
 
 
 def command_execute(*cmd_args: 'tuple[str|Path]', cwd: 'str|Path|None' = None,

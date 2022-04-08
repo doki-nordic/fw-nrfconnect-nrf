@@ -42,6 +42,6 @@ def calculate_hashes(data: Data):
 def post_process(data: Data):
     '''Post process input files by removing duplicates and calculating SHA-1'''
     if len(data.files) == 0:
-        raise SbomException('No input files.\nRun "west sbom --help" for usage details.')
+        raise SbomException('No input files.\nRun "west ncs-sbom --help" for usage details.')
     remove_duplicates(data)
     calculate_hashes(data)

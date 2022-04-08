@@ -25,7 +25,7 @@ def pre_process(data: Data):
             license = license.upper()
             info = get_spdx_license_expr_info(license)
             if info.valid and not info.is_id_only and len(info.licenses) > 1:
-                repeated_expr_items = repeated_expr_items.union(info.licenses)
+                repeated_expr_items.update(info.licenses)
             if not info.valid or info.or_present:
                 or_expr_items.add(license)
             else:
@@ -34,6 +34,9 @@ def pre_process(data: Data):
         if len(or_expr_items) > 1 or len(simple_expr_items) > 0:
             or_expr_items = { f'({x})' for x in or_expr_items }
         file.license_expr = ' AND '.join(sorted(simple_expr_items.union(or_expr_items)))
+    # Collect all used detectors
+    for file in data.files:
+        data.detectors.update(file.detectors)
     # Collect all used licenses and license expressions and put them into data.licenses
     used_licenses = dict()
     for file in data.files:
