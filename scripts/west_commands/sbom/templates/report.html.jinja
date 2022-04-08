@@ -95,6 +95,16 @@
 		.src {
 			font-family: 'Inconsolata', monospace;
 		}
+
+		.fa {
+			text-decoration: none;
+			color: black;
+		}
+
+		.fa:hover {
+			text-decoration: none;
+			color: #009;
+		}
 	</style>
 </head>
 
@@ -143,7 +153,7 @@
 	<a name="no-license"></a>
 	<h2>No license information detected</h2>
 	<pre>
-{% for file_info in files_by_license[''] %}{{file_info.file_path|e}}
+{% for file_info in files_by_license[''] %}<a href="file:///{{file_info.file_path|e}}" class="fa">{{file_info.file_path|e}}</a>
 {% endfor %}
 	</pre>
 	{% endif %}
@@ -199,7 +209,7 @@
 		{% endif %}
 	</div>
 	<pre>
-{% for file_info in files_by_license[license] %}{{file_info.file_path|e}}
+{% for file_info in files_by_license[license] %}<a href="file:///{{file_info.file_path|e}}" class="fa">{{file_info.file_path|e}}</a>
 {% endfor %}
 	</pre>
 	{% endif %}

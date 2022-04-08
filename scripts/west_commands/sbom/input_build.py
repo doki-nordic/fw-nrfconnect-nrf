@@ -139,7 +139,8 @@ class InputBuild:
             else:
                 sub_inputs_tuple = self.query_inputs(input)
                 phony = sub_inputs_tuple[3]
-                assert phony
+                if not phony:
+                    raise SbomException(f'The input "{input}" does not exist or it is invalid build target.')
                 sub_result = self.query_inputs_recursive(input, done, sub_inputs_tuple)
                 result = result.union(sub_result)
         return result
