@@ -56,6 +56,7 @@ class ArgsClass:
     output_html: 'str|None'
     output_cache_database: 'str|None'
     input_cache_database: 'str|None'
+    allowed_in_map_file_only: 'str'
     processes: int
     scancode: str
     ar: str
@@ -105,6 +106,11 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument('--input-cache-database', default=None,
                         help='Input license database. The database is passed to the "cache-databe" '
                              'detector')
+    parser.add_argument('--allowed-in-map-file-only', default='libgcc.a,libc_nano.a,libm_nano.a',
+                        help='Comma separated list of file names which can be detected in a map '
+                             'file, but not visible in the build system. Usually, automatically '
+                             'linked toolchain libraries or libraries linked by specifying custom '
+                             'linker options.')
     parser.add_argument('-n', '--processes', type=int, default=0,
                         help='Scan using n parallel processes. By default, the number of processes '
                              'is equal to the number of processor cores.')
@@ -143,6 +149,7 @@ def init_args(allowed_detectors: dict):
     args.license_detectors = split_detectors_list(allowed_detectors, args.license_detectors)
     args.optional_license_detectors = set(split_detectors_list(allowed_detectors,
                                                                args.optional_license_detectors))
+    args.allowed_in_map_file_only = set(split_arg_list(args.allowed_in_map_file_only))
 
     if args.output_html == '':
         if args.build_dir is not None:

@@ -58,7 +58,7 @@ class License(DataBaseClass):
     name: 'str|None' = None
     url: 'str|None' = None
     text: 'str|None' = None
-    detector: 'str|None' = None
+    detectors: 'set[str]' = set()
 
 
 class LicenseExpr(DataBaseClass):

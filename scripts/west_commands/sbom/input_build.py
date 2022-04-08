@@ -7,10 +7,12 @@
 Get input files from an application build directory.
 '''
 
+import json
 import os
 import re
 from enum import Enum
 from pathlib import Path
+from types import SimpleNamespace
 from west import log
 from args import args
 from data_structure import Data, FileInfo
@@ -45,6 +47,7 @@ class InputBuild:
 
 
     def __init__(self, data: Data, build_dir: Path):
+        self.map_items = None
         self.data = data
         self.build_dir = Path(build_dir)
         deps_file_name = command_execute('ninja', '-t', 'deps', cwd=self.build_dir,
@@ -146,9 +149,44 @@ class InputBuild:
         return result
 
 
-    def verify_elf_inputs_in_map_file(self, map_file: Path, elf_inputs: 'set[str]'):
-        # TODO: read map file and check if all inputs provided by a map file are in elf_inputs
-        pass
+    def read_file_list_from_map(self, map_file: Path):
+        with open(map_file, 'r') as fd:
+            map_content = fd.read()
+        items = dict()
+        file_entry_re = (r'^(?:[ \t]+\.[^\s]+(?:\r?\n)?[ \t]+0x[0-9a-fA-F]{16}[ \t]+'
+                         r'0x[0-9a-fA-F]+|LOAD)[ \t]+(.*?)(?:\((.*)\))?$')
+        linker_stuff_re = r'(?:\s+|^)linker\s+|\s+linker(?:\s+|$)'
+        for match in re.finditer(file_entry_re, map_content, re.M):
+            file = match.group(1)
+            file_path = (self.build_dir / file).resolve()
+            if str(file_path) not in items:
+                exists = file_path.is_file()
+                possibly_linker = match.group(2) is None and re.search(linker_stuff_re, file, re.I) is not None
+                if (not exists) and (not possibly_linker):
+                    raise SbomException(f'The input file {file}, extracted from a map file, does not exists.')
+                content = dict()
+                item = SimpleNamespace(
+                    path=file_path,
+                    optional=(not exists) and possibly_linker,
+                    content=content,
+                    extracted=False)
+                items[str(file_path)] = item
+            else:
+                item = items[str(file_path)]
+                content = item.content
+            if match.group(2) is not None:
+                file = Path(match.group(2)).name
+                content[file] = False
+        if False:
+            for name, item in items.items():
+                print(name)
+                print(f'    path: {item.path}')
+                print(f'    optional: {item.optional}')
+                print(f'    extracted: {item.extracted}')
+                for file, val in item.content.items():
+                    print(f'        {file}: {val}')
+            exit()
+        return items
 
 
     @staticmethod
@@ -170,13 +208,24 @@ class InputBuild:
 
 
     def process_archive(self, archive_path, archive_target):
+        if str(archive_path) in self.map_items:
+            map_item = self.map_items[str(archive_path)]
+            map_item.extracted = True
+        else:
+            log.wrn(f'Target depends on archive "{archive_path}", but it is not in a map file.')
+            map_item = None
         archive_inputs = self.query_inputs_recursive(archive_target)
         if not self.verify_archive_inputs(archive_path, archive_inputs):
+            if map_item is not None:
+                map_item.content = dict()
             return {archive_path}
         leafs = set()
         for input in archive_inputs:
             input_path = (self.build_dir / input).resolve()
             input_type = detect_file_type(input_path)
+            if map_item is not None:
+                if input_path.name in map_item.content:
+                    map_item.content[input_path.name] = True
             if input_type == FileType.OTHER:
                 leafs.add(input_path)
             else:
@@ -207,19 +256,42 @@ class InputBuild:
                                 f'Expected location "{map_file}".')
         log.dbg(f'Map file: {map_file}')
 
+        self.map_items = self.read_file_list_from_map(map_file)
+
         self.data.inputs.append(f'{target} from build directory {self.build_dir.resolve()}')
         elf_inputs = self.query_inputs_recursive(target)
-        self.verify_elf_inputs_in_map_file(map_file, elf_inputs)
         leafs = set()
         for input in elf_inputs:
             input_path = (self.build_dir / input).resolve()
             input_type = detect_file_type(input_path)
             if input_type == FileType.ARCHIVE:
                 leafs = leafs.union(self.process_archive(input_path, input))
-            elif input_type == FileType.OBJ:
-                leafs = leafs.union(self.process_obj(input_path, input))
             else:
-                leafs.add(input_path)
+                if str(input_path) in self.map_items:
+                    item = self.map_items[str(input_path)]
+                    item.extracted = True
+                    item.content = dict()
+                if input_type == FileType.OBJ:
+                    leafs = leafs.union(self.process_obj(input_path, input))
+                else:
+                    leafs.add(input_path)
+
+        valid = True
+        for name, item in self.map_items.items():
+            if item.path.name in args.allowed_in_map_file_only:
+                leafs.add(item.path)
+                item.extracted = True
+                item.content = dict()
+            if (not item.extracted) and (not item.optional):
+                valid = False
+                log.err(f'Input "{name}", extracted from a map file, is not detected in a build system.')
+            for file, value in item.content.items():
+                if not value:
+                    valid = False
+                    log.err(f'File "{file}" from "{name}", extracted from a map file, is not detected in a build system.')
+        if not valid:
+            raise SbomException(f'Detected differences between a map file and a build system. Aborting.')
+
         for leaf in leafs:
             file = FileInfo()
             file.file_path = leaf
