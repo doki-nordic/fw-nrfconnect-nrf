@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 '''
-This script is not executed in context of "west sbom" command.
+This script is not executed in context of "west ncs-sbom" command.
 Use this script to update ../data/spdx-licenses.yaml file with newest SPDX license list.
 '''
 

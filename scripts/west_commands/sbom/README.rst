@@ -7,7 +7,7 @@ Software Bill of Materials
    :local:
    :depth: 2
 
-The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west sbom``.
+The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west ncs-sbom``.
 It provides a list of used licenses for an application build or the specific files.
 
 .. note::
@@ -19,7 +19,7 @@ It provides a list of used licenses for an application build or the specific fil
 Overview
 ********
 
-The process of using the ``sbom`` command involves the following steps:
+The process of using the ``ncs-sbom`` command involves the following steps:
 
 #. Create list of input files based on provided command line arguments,
    for example, all source files used for building a specific application.
@@ -50,7 +50,7 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install -r nrf/scripts/requirements-west-ncs-sbom.txt
 
    .. group-tab:: Linux
 
@@ -59,7 +59,7 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install --user -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install --user -r nrf/scripts/requirements-west-ncs-sbom.txt
 
    .. group-tab:: macOS
 
@@ -68,10 +68,10 @@ Use the following command to install the requirements.
         .. parsed-literal::
            :class: highlight
 
-           pip3 install -r nrf/scripts/requirements-west-sbom.txt
+           pip3 install -r nrf/scripts/requirements-west-ncs-sbom.txt
 
 .. note::
-    The ``sbom`` command uses the `Scancode-Toolkit`_ that requires additional dependencies to be installed on a Linux system.
+    The ``ncs-sbom`` command uses the `Scancode-Toolkit`_ that requires additional dependencies to be installed on a Linux system.
     To install the required tools on Ubuntu, run::
 
       sudo apt install python-dev bzip2 xz-utils zlib1g libxml2-dev libxslt1-dev libpopt0
@@ -82,27 +82,27 @@ Use the following command to install the requirements.
 Using the command
 *****************
 
-The following examples demonstrate the basic usage of the ``sbom`` command.
+The following examples demonstrate the basic usage of the ``ncs-sbom`` command.
 
 * To see the help, run the following command:
 
   .. code-block:: bash
 
-    west sbom -h
+    west ncs-sbom -h
 
 * To get an analysis of the built application and generate a report to the ``sbom_report.html`` file in the build directory, run:
 
   .. parsed-literal::
      :class: highlight
 
-      west sbom -d *build-directory*
+      west ncs-sbom -d *build-directory*
 
 * To analyze the selected files and generate a report to an HTML file, run:
 
   .. parsed-literal::
      :class: highlight
 
-     west sbom --input-files *file1* *file2* --output-html *file-name.html*
+     west ncs-sbom --input-files *file1* *file2* --output-html *file-name.html*
 
 
 .. _west_sbom Specifying input:
@@ -221,13 +221,13 @@ You can specify the format of the report output using the ``output`` argument.
 Detectors
 =========
 
-The ``sbom`` command has the following detectors implemented:
+The ``ncs-sbom`` command has the following detectors implemented:
 
 * ``spdx-tag`` - search for the ``SPDX-License-Identifier`` in the source code or the binary file.
   For guidelines, see `SPDX identifier`_. Enabled by default.
 
 * ``full-text`` - compare the contents of the source file with a small database of reference texts.
-  The database is part of the ``sbom`` command. Enabled by default.
+  The database is part of the ``ncs-sbom`` command. Enabled by default.
 
 * ``scancode-toolkit`` - license detection by the `Scancode-Toolkit`_. Enabled and optional by default.
 
@@ -258,7 +258,7 @@ The ``sbom`` command has the following detectors implemented:
      .. parsed-literal::
         :class: highlight
 
-        west sbom --input-files *files ...* --license-detectors scancode-toolkit --output-cache-database *cache-database.json*
+        west ncs-sbom --input-files *files ...* --license-detectors scancode-toolkit --output-cache-database *cache-database.json*
 
 If you prefer a non-default set of detectors, you can provide a list of comma-separated detectors with the ``--license-detectors`` option, for example:
 

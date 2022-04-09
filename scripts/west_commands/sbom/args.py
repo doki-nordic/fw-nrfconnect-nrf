@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 '''
-Parsing and utility functions for west sbom command arguments.
+Parsing and utility functions for west ncs-sbom command arguments.
 '''
 
 import argparse
@@ -81,7 +81,7 @@ def split_detectors_list(allowed_detectors: dict, text: str) -> 'list[str]':
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    '''Add sbom specific arguments for parsing.'''
+    '''Add ncs-sbom specific arguments for parsing.'''
     parser.add_argument('-d', '--build-dir', nargs='+', action='append',
                         help='Build input directory. You can provide this option more than once.')
     parser.add_argument('--input-files', nargs='+', action='append',

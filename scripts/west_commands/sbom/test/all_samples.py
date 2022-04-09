@@ -69,15 +69,15 @@ for yaml_file in yamls:
             continue
 
     with NamedTemporaryFile(delete=False, mode='w+', prefix='buildlog_', suffix='.txt') as out_file:
-        print(f'  sbom log: {out_file.name}')
+        print(f'  ncs-sbom log: {out_file.name}')
         try:
-            subprocess.run(['west', 'sbom', '-d', 'build_sbom_test', '--license-detectors', 'spdx-tag,full-text'],
+            subprocess.run(['west', 'ncs-sbom', '-d', 'build_sbom_test', '--license-detectors', 'spdx-tag,full-text'],
                            cwd=str(sample_dir), stderr=out_file, stdout=out_file, check=True)
-            print('  west sbom: OK')
+            print('  west ncs-sbom: OK')
             print(f'  report: {sample_dir}/build_sbom_test/sbom_report.html')
         except Exception as ex:
             out_file.write('\n\n\n\n\n')
             out_file.write(traceback.format_exc())
-            print('  west sbom: ERROR')
+            print('  west ncs-sbom: ERROR')
             continue
     

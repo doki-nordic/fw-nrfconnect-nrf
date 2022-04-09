@@ -149,7 +149,7 @@ class InputBuild:
         return result
 
 
-    def read_file_list_from_map(self, map_file: Path):
+    def read_file_list_from_map(self, map_file: Path) -> 'dict()':
         with open(map_file, 'r') as fd:
             map_content = fd.read()
         items = dict()
@@ -177,15 +177,6 @@ class InputBuild:
             if match.group(2) is not None:
                 file = Path(match.group(2)).name
                 content[file] = False
-        if False:
-            for name, item in items.items():
-                print(name)
-                print(f'    path: {item.path}')
-                print(f'    optional: {item.optional}')
-                print(f'    extracted: {item.extracted}')
-                for file, val in item.content.items():
-                    print(f'        {file}: {val}')
-            exit()
         return items
 
 
@@ -258,7 +249,7 @@ class InputBuild:
 
         self.map_items = self.read_file_list_from_map(map_file)
 
-        self.data.inputs.append(f'{target} from build directory {self.build_dir.resolve()}')
+        self.data.inputs.append(f'The "{target}" file from the build directory "{self.build_dir.resolve()}"')
         elf_inputs = self.query_inputs_recursive(target)
         leafs = set()
         for input in elf_inputs:

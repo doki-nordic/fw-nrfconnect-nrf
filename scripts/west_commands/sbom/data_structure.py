@@ -5,7 +5,7 @@
 
 '''
 File contains classes that describes common data structure passed between elements
-the west sbom command.
+the west ncs-sbom command.
 '''
 
 import copy
@@ -102,3 +102,4 @@ class Data(DataBaseClass):
     files_by_license: 'dict[list[FileInfo]]' = dict()
     licenses_sorted: 'list[str]' = list()
     inputs: 'list[str]' = list()
+    detectors: 'set[str]' = set()
