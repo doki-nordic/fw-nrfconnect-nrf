@@ -11,6 +11,7 @@ import spdx_tag_detector
 import full_text_detector
 import scancode_toolkit_detector
 import cache_database_detector
+import external_file_detector
 import file_input
 import input_build
 import input_post_process
@@ -33,6 +34,7 @@ detectors = {
     'full-text': full_text_detector.detect,
     'scancode-toolkit': scancode_toolkit_detector.detect,
     'cache-database': cache_database_detector.detect,
+    'external-file': external_file_detector.detect,
 }
 
 generators = {

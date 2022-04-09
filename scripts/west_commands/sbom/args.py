@@ -93,7 +93,7 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Reads list of files from a file. Works the same as "--input-files". '
                              'with arguments from each line of the file.'
                              'You can provide this option more than once.')
-    parser.add_argument('--license-detectors', default='spdx-tag,full-text,scancode-toolkit',
+    parser.add_argument('--license-detectors', default='spdx-tag,full-text,external-file,scancode-toolkit',
                         help='Comma separated list of enabled license detectors.')
     parser.add_argument('--optional-license-detectors', default='scancode-toolkit',
                         help='Comma separated list of optional license detectors. Optional license '
@@ -151,8 +151,10 @@ def init_args(allowed_detectors: dict):
                                                                args.optional_license_detectors))
     args.allowed_in_map_file_only = set(split_arg_list(args.allowed_in_map_file_only))
 
-    # Use default build directory if exists
-    if args.build_dir is None:
+    # Use default build directory if exists and there is no other input
+    if (args.build_dir is None
+            and (args.input_files is None or len(args.input_files) == 0)
+            and (args.input_list_file is None or len(args.input_list_file) == 0)):
         from input_build import get_default_build_dir # Avoid circular import
         args.build_dir = [[get_default_build_dir()]]
 
