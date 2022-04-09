@@ -99,7 +99,7 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Comma separated list of optional license detectors. Optional license '
                              'detector is skipped if any of the previous detectors has already '
                              'detected any license.')
-    parser.add_argument('--output-html', default='',
+    parser.add_argument('--output-html', default=None,
                         help='Generate output HTML report.')
     parser.add_argument('--output-cache-database', default=None,
                         help='Generate a license database for the files using scancode-toolkit')
@@ -151,11 +151,14 @@ def init_args(allowed_detectors: dict):
                                                                args.optional_license_detectors))
     args.allowed_in_map_file_only = set(split_arg_list(args.allowed_in_map_file_only))
 
-    if args.output_html == '':
-        if args.build_dir is not None:
-            args.output_html = Path(args.build_dir[0][0]) / DEFAULT_REPORT_NAME
-        else:
-            args.output_html = None
+    # Use default build directory if exists
+    if args.build_dir is None:
+        from input_build import get_default_build_dir # Avoid circular import
+        args.build_dir = [[get_default_build_dir()]]
+
+    # By default, place HTML output in the build directory
+    if (args.output_html is None) and (args.build_dir is not None):
+        args.output_html = Path(args.build_dir[0][0]) / DEFAULT_REPORT_NAME
 
 
 args: 'ArgsClass' = ArgsClass()

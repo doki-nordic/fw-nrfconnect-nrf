@@ -19,6 +19,7 @@ from data_structure import Data, FileInfo
 from common import SbomException, command_execute
 
 
+DEFAULT_BUILD_DIR = 'build'
 DEFAULT_TARGET = 'zephyr/zephyr.elf'
 
 
@@ -314,6 +315,15 @@ def check_gnu_ar_command():
             f'Make sure that you have PATH pointing to that file.\n'
             f'You can user "--ar=path/to/ar" to pass specific path to "ar".')
     log.dbg(f'"ar" command detected: {args.ar}')
+
+
+def get_default_build_dir() -> 'str|None':
+    default_build_dir = Path(DEFAULT_BUILD_DIR).resolve()
+    default_target = default_build_dir / DEFAULT_TARGET
+    if default_build_dir.exists() and default_target.exists():
+        return DEFAULT_BUILD_DIR
+    else:
+        return None
 
 
 def generate_input(data: Data):

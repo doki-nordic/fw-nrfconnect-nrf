@@ -7,11 +7,13 @@
 Generates report using the Jinja2 templates.
 '''
 
+import os
 from pathlib import Path
 from typing import Any
 from jinja2 import Template
 from west import log
 from data_structure import Data
+from urllib.parse import quote
 
 
 def data_to_dict(data: Any) -> dict:
@@ -33,3 +35,5 @@ def generate(data: Data, output_file: 'Path|str', template_file: Path):
     out = t.render(**data_to_dict(data))
     with open(output_file, 'w') as fd:
         fd.write(out)
+    escaped_path = quote(str(Path(output_file).resolve()).replace(os.sep, '/').strip("/"))
+    log.inf(f'Output written to file:///{escaped_path}')
