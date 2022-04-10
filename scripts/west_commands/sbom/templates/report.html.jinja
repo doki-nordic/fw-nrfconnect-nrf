@@ -5,6 +5,7 @@
 	<title>SBOM Report</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Lato&family=Roboto+Slab&display=swap');
+		/* Nordic Default Theme */
 		body {
 			font-family: Lato,proxima-nova,Helvetica Neue,Arial,sans-serif;
 			color: #404040;
@@ -20,6 +21,7 @@
 			border: 1px solid #e1e4e5;
 			margin: 1px 0 24px;
 			background: #f8f8f8;
+			min-width: fit-content;
 		}
 		h1 {
 			font-family: Roboto Slab,ff-tisa-web-pro,Georgia,Arial,sans-serif;
@@ -102,6 +104,72 @@
 		}
 		span.-icon-exclamation {
 			background-image: url('data:image/svg+xml;charset=utf-8,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20version%3D%221.1%22%20viewBox%3D%220%200%2016%2016%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%228%22%20fill%3D%22%23fff%22%2F%3E%3Crect%20x%3D%226.5%22%20y%3D%222.5%22%20width%3D%223%22%20height%3D%227%22%20fill%3D%22%236ab0de%22%2F%3E%3Crect%20x%3D%226.5%22%20y%3D%2210.5%22%20width%3D%223%22%20height%3D%223%22%20fill%3D%22%236ab0de%22%2F%3E%3C%2Fsvg%3E');
+		}
+		/* Dark Color Theme */
+		@media (prefers-color-scheme: dark) {
+			body {
+				color: #cccccc;
+				background-color: #292929;
+			}
+			pre {
+				border: 1px solid #474747;
+				background: #333333;
+			}
+			h2, h1 {
+				border-top-color: #444444;
+			}
+			a:hover {
+				color: #66d1e9;
+			}
+			.fa {
+				color: #cccccc;
+			}
+			.fa:hover {
+				color: #66d1e9;
+			}
+			div.note-header, a#scroll-up {
+				background: #447291;
+			}
+			div.note-content {
+				background: #2c3e49;
+				color: #cccccc;
+			}
+		}
+		/* Visual Studio Code Color Theme */
+		html[style*="--vscode"] body {
+			color: var(--vscode-editor-foreground);
+			background-color: var(--vscode-editor-background);
+		}
+		html[style*="--vscode"] pre {
+			border: 1px solid var(--vscode-panel-border);
+			background: var(--vscode-sideBar-background);
+		}
+		html[style*="--vscode"] h2, html[style*="--vscode"] h1 {
+			border-top-color: var(--vscode-panel-border);
+		}
+		html[style*="--vscode"] a {
+			color: var(--vscode-textLink-foreground);
+			text-decoration: none;
+		}
+		html[style*="--vscode"] a:hover {
+			text-decoration: underline;
+			color: var(--vscode-textLink-activeForeground);
+		}
+		html[style*="--vscode"] .fa {
+			color: var(--vscode-foreground);
+		}
+		html[style*="--vscode"] .fa:hover {
+			text-decoration: none;
+			color: var(--vscode-textLink-activeForeground);
+		}
+		html[style*="--vscode"] div.note-header, html[style*="--vscode"] a#scroll-up {
+			text-decoration: none;
+			background: var(--vscode-button-background);
+			color: var(--vscode-button-foreground);
+		}
+		html[style*="--vscode"] div.note-content {
+			background: var(--vscode-quickInput-background);
+			color: var(--vscode-quickInput-foreground);
 		}
 	</style>
 </head>
