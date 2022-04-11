@@ -121,31 +121,16 @@ You can also mix them, for example, to generate a report for the application and
      -d build_directory
 
   You have to first build the ``build_directory`` with the ``west build`` command using ``Ninja`` as the underlying build tool (default).
+  The build must be successful.
+  Any change in the application configuration may affect the results, so always rebuild it after reconfiguration and before calling the ``west ncs-sbom``.
 
-  This option requires the GNU ``ar`` tool.
-  If you do not have it on your ``PATH``, you can pass it with the ``--ar`` option, for example:
+  You can skip this option if you are in the application directory and you have a default ``build`` directory there - the same way as in ``west build`` command.
 
-  .. code-block:: bash
-
-     --ar ~/zephyr-sdk/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar
-
-  The command searches for the files used during the build of :file:`zephyr/zephyr.elf` target.
-  It also requires the :file:`zephyr/zephyr.map` file created by the linker.
+  The :ref:`west_sbom Extracting from build` contains a details how a list of files in extracted from a build directory.
 
   .. note::
       All the files that are not dependencies of the :file:`zephyr/zephyr.elf` target are not taken as an input.
       If the :file:`.elf` file is modified after the linking, the modifications are not applied.
-
-  If your build directory contains more than one output target or it has a different name,
-  you can add targets after the ``build_directory``.
-  If the :file:`.map` file and the associated file:`.elf` file have different names,
-  you can provide the :file:`.map` file after the ``:`` sign following the target,
-  for example:
-
-  .. parsed-literal::
-     :class: highlight
-
-     -d build_directory *target1.elf* *target2.elf*:*file2.map*
 
   .. note::
       The ``-d`` option is experimental.
@@ -158,7 +143,7 @@ You can also mix them, for example, to generate a report for the application and
      --input-files *file1* *file2* ...
 
   Each argument of this option can contain globs as defined by `Python's Path.glob`_ with two additions:
-  exclamation mark ``!`` to exclude files and absolute paths.
+  support for absolute paths and exclamation mark ``!`` to exclude files.
 
   For example, if you want to include all :file:`.c` files from the current directory and all subdirectories recursively:
 
@@ -239,6 +224,28 @@ The ``ncs-sbom`` command has the following detectors implemented:
 
   This detector is optional because is significantly slower than the others.
 
+* ``external-file`` - search for license information in an external file. Enabled by default.
+
+  The external file has the following properties:
+
+    * It is located in the same directory or any of the parent directories of the file under detection.
+    * Its name contains ``LICENSE``, ``LICENCE`` or ``COPYING`` (case insensitive).
+    * It has a ``SPDX-License-Identifier`` tag.
+    * It has one or more ``NCS-SBOM-Apply-To-File`` tags containing file paths or globs (as defined by the `Python's Path.glob`_).
+      They are relative to the external file.
+
+  If any of the ``NCS-SBOM-Apply-To-File`` tags matches the file under detection, the license from the SPDX tag is used, for example:
+
+  .. code-block:: text
+
+     /* The following lines will apply Nordic 5-Clause license to all ".a" files
+      * and ".lib" files in the "lib" directory and all its subdirectories.
+      *
+      * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+      * NCS-SBOM-Apply-To-File: lib/**/*.a
+      * NCS-SBOM-Apply-To-File: lib/**/*.lib
+      */
+
 * ``cache-database`` - use license information detected and cached earlier in the cache database file.
   Disabled by default.
 
@@ -276,3 +283,49 @@ Detectors are executed from left to right using a list provided by the ``--licen
 
 Some detectors may run in parallel on all available CPU cores, which speeds up the detection time.
 Use ``-n`` option to limit number of parallel threads or processes.
+
+
+.. _west_sbom Extracting from build:
+
+Extracting list of files from a build directory
+***********************************************
+
+The ``ncs-sbom`` extracts a list of files from a build directory by querying the ``ninja`` about its targets and dependencies.
+
+The entry point is the ``zephyr/zephyr.elf`` target.
+The script asks ``ninja`` for all input targets of the ``zephyr/zephyr.elf`` target.
+Next, it asks for all input targets of the previously extracted input targets,
+and so on until it reaches all leaves in the dependency tree.
+The result is a list of all the leaves.
+
+You can change the target or specify multiple targets by adding them after the build directory in the ``-d`` option, for example:
+
+.. parsed-literal::
+   :class: highlight
+
+   -d build_directory *target1.elf* *target2.elf*
+
+Two redundant methods for increasing the correctness of the above algorithm are implemented:
+
+* Each library is examined using the GNU ``ar`` tool.
+  If the list of files returned by the GNU ``ar`` tool is covered by the list returned from the ``ninja``,
+  the list is assumed to be valid.
+  Otherwise, the library is assumed to be a leaf, so it is shown in the report and its inputs are not analyzed further.
+
+* The ``ncs-sbom`` pareses the :file:`.map` file created during the ``zephyr/zephyr.elf`` linking.
+  It gives a list of all object files and libraries linked into ``zephyr/zephyr.elf``.
+  The script ends with a fatal error if some file in the :file:`.map` file is not visible by the ``ninja``.
+
+  Exceptions are the runtime and standard libraries.
+  You can specify the list of exceptions with the ``--allowed-in-map-file-only`` option.
+  By default, it contains a few common names for the runtime and standard libraries.
+
+  If the :file:`.map` file and the associated :file:`.elf` file have different names,
+  you can provide the :file:`.map` file after the ``:`` sign following the target,
+  for example:
+
+  .. parsed-literal::
+     :class: highlight
+
+     -d build_directory *target.elf*:*file.map*
+
