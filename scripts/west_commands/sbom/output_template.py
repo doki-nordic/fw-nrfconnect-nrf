@@ -10,10 +10,10 @@ Generates report using the Jinja2 templates.
 import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 from jinja2 import Template
 from west import log
 from data_structure import Data
-from urllib.parse import quote
 
 
 def data_to_dict(data: Any) -> dict:

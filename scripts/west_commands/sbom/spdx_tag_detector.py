@@ -45,5 +45,5 @@ def detect(data: Data, optional: bool):
 
     for results, file, _ in concurrent_pool_iter(detect_file, filtered, True, 4096):
         if len(results) > 0:
-            file.licenses = file.licenses.union(results)
+            file.licenses.update(results)
             file.detectors.add('spdx-tag')

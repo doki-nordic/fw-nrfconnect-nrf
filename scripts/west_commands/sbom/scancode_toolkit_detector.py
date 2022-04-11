@@ -78,7 +78,7 @@ def detect(data: Data, optional: bool):
                     name = i['short_name']
                 else:
                     name = None
-                
+
                 if 'spdx_url' in i:
                     url = i['spdx_url']
                 elif 'reference_url' in i:

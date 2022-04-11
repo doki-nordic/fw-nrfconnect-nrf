@@ -14,7 +14,7 @@ dirs = '''
 supported_platforms = '''
     nrf52840dk_nrf52840 nrf52dk_nrf52832 nrf5340dk_nrf5340_cpuapp nrf52840dk_nrf52811
     nrf52840dongle_nrf52840 nrf52dk_nrf52805 nrf52dk_nrf52810 nrf52833dk_nrf52833
-    nrf52833dk_nrf52820
+    nrf52833dk_nrf52820 nrf9160dk_nrf9160_ns
     '''.split()
 
 yamls = []
@@ -43,8 +43,8 @@ for yaml_file in yamls:
                         value = value.split()
                     return set(value)
                 return set()
-            platforms = platforms.union(collect_platforms('platform_allow'))
-            platforms = platforms.union(collect_platforms('integration_platforms'))
+            platforms.update(collect_platforms('platform_allow'))
+            platforms.update(collect_platforms('integration_platforms'))
     except KeyError:
         pass
     board = supported_platforms[0]
@@ -73,11 +73,11 @@ for yaml_file in yamls:
         try:
             subprocess.run(['west', 'ncs-sbom', '-d', 'build_sbom_test', '--license-detectors', 'spdx-tag,full-text'],
                            cwd=str(sample_dir), stderr=out_file, stdout=out_file, check=True)
-            print('  west ncs-sbom: OK')
+            print('  west ncs-sbom: \x1b[32mOK\x1b[0m')
             print(f'  report: {sample_dir}/build_sbom_test/sbom_report.html')
         except Exception as ex:
             out_file.write('\n\n\n\n\n')
             out_file.write(traceback.format_exc())
-            print('  west ncs-sbom: ERROR')
+            print('\x1b[31m  west ncs-sbom: ERROR\x1b[0m')
             continue
     

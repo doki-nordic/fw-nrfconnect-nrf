@@ -59,7 +59,8 @@ class ArgsClass:
     allowed_in_map_file_only: 'str'
     processes: int
     scancode: str
-    ar: str
+    ar: 'str|None'
+    ninja: 'str|None'
     help_detectors: bool
 
 
@@ -93,7 +94,8 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Reads list of files from a file. Works the same as "--input-files". '
                              'with arguments from each line of the file.'
                              'You can provide this option more than once.')
-    parser.add_argument('--license-detectors', default='spdx-tag,full-text,external-file,scancode-toolkit',
+    parser.add_argument('--license-detectors',
+                        default='spdx-tag,full-text,external-file,scancode-toolkit',
                         help='Comma separated list of enabled license detectors.')
     parser.add_argument('--optional-license-detectors', default='scancode-toolkit',
                         help='Comma separated list of optional license detectors. Optional license '
@@ -106,7 +108,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument('--input-cache-database', default=None,
                         help='Input license database. The database is passed to the "cache-databe" '
                              'detector')
-    parser.add_argument('--allowed-in-map-file-only', default='libgcc.a,libc_nano.a,libm_nano.a',
+    parser.add_argument('--allowed-in-map-file-only',
+                        default='libgcc.a,'
+                                'libc_nano.a,libc++_nano.a,libm_nano.a,'
+                                'libc.a,libc++.a,libm.a',
                         help='Comma separated list of file names which can be detected in a map '
                              'file, but not visible in the build system. Usually, automatically '
                              'linked toolchain libraries or libraries linked by specifying custom '
@@ -116,15 +121,18 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'is equal to the number of processor cores.')
     parser.add_argument('--scancode', default='scancode',
                         help='Path to scancode-toolkit executable.')
-    parser.add_argument('--ar', default='ar',
-                        help='Path to GNU binutils ar program.')
+    parser.add_argument('--ar', default=None,
+                        help='Path to GNU binutils "ar" executable. '
+                             'By default, it will be automatically detected.')
+    parser.add_argument('--ninja', default=None,
+                        help='Path to "ninja" executable. '
+                             'By default, it will be automatically detected.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
 
 
 def copy_arguments(source):
     '''Copy arguments from source object to exported args variable.'''
-    global args
     for name in source.__dict__:
         args.__dict__[name] = source.__dict__[name]
     args._initialized = True
@@ -132,7 +140,6 @@ def copy_arguments(source):
 
 def init_args(allowed_detectors: dict):
     '''Parse, validate and postprocess arguments'''
-    global args, COMMAND_DESCRIPTION
 
     if not args._initialized:
         # Parse command line arguments if running outside west

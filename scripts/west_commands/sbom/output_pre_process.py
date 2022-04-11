@@ -25,7 +25,7 @@ def pre_process(data: Data):
             license = license.upper()
             info = get_spdx_license_expr_info(license)
             if info.valid and not info.is_id_only and len(info.licenses) > 1:
-                repeated_expr_items = repeated_expr_items.union(info.licenses)
+                repeated_expr_items.update(info.licenses)
             if not info.valid or info.or_present:
                 or_expr_items.add(license)
             else:

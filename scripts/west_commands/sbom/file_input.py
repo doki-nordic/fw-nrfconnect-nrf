@@ -71,7 +71,7 @@ def generate_input(data: Data):
             joiner = '", "'
             data.inputs.append(f'Files: "{joiner.join(globs)}" (relative to "{cwd}")')
             r = resolve_globs(cwd, globs)
-            full_set = full_set.union(r)
+            full_set.update(r)
 
     if args.input_list_file is not None:
         for file in args.input_list_file:
@@ -88,7 +88,7 @@ def generate_input(data: Data):
             except Exception as e:
                 raise SbomException(f'Cannot read from file "{file_path}": {e}') from e
             r = resolve_globs(file_path.parent, globs)
-            full_set = full_set.union(r)
+            full_set.update(r)
 
     for file_path in full_set:
         file = FileInfo()

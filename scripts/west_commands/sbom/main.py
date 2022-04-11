@@ -7,6 +7,7 @@
 Main entry point for the script.
 '''
 
+from pathlib import Path
 import spdx_tag_detector
 import full_text_detector
 import scancode_toolkit_detector
@@ -17,7 +18,6 @@ import input_build
 import input_post_process
 import output_pre_process
 import output_template
-from pathlib import Path
 from west import log
 from common import SbomException, dbg_time
 from args import args, init_args

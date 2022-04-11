@@ -45,7 +45,8 @@ def parse_license_file(file: Path):
     except:
         # Going up to root directory may cause some unexpected IO/permission problems.
         # Ignore them all and assume that a valid external file must be accessible.
-        log.dbg(f'Exception reading file "{file}": {traceback.format_exc()}', log.VERBOSE_VERY)
+        log.dbg(f'Exception reading file "{file}": {traceback.format_exc()}',
+                level=log.VERBOSE_VERY)
         return
     licenses = set()
     for m in SPDX_TAG_RE.finditer(content):
@@ -72,7 +73,8 @@ def search_dir(directory: Path):
     try:
         listdir = list(directory.iterdir())
     except:
-        log.dbg(f'Exception reading directory "{directory}": {traceback.format_exc()}', log.VERBOSE_VERY)
+        log.dbg(f'Exception reading directory "{directory}": {traceback.format_exc()}',
+                level=log.VERBOSE_VERY)
         listdir = list()
     for file in listdir:
         if (file.is_file() and EXTERNAL_FILE_RE.search(file.name) is not None):
