@@ -61,7 +61,7 @@ def detect(data: Data, optional: bool):
             else:
                 friendly_id = i['key']
             id = friendly_id.upper()
-            if id == 'UNKNOWN-SPDX':
+            if id == 'UNKNOWN-SPDX' or id == 'LICENSEREF-SCANCODE-UNKNOWN-SPDX':
                 log.wrn(f'Unknown spdx tag, file: {file.file_path}')
                 continue
 
