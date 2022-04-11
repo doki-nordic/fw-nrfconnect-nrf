@@ -101,4 +101,5 @@ def detect(data: Data, optional: bool):
                     license.name = name
                 if license.url is None:
                     license.url = url
+                license.custom = False
                 license.detectors.add('scancode-toolkit')
