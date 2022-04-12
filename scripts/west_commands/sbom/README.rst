@@ -187,6 +187,8 @@ You can specify the format of the report output using the ``output`` argument.
 
      --output-html *file-name.html*
 
+  :ref:`west_sbom HTML report overview` provides more details about the report.
+
   If you use ``-d`` option, you do not need to specify the report format.
   The :file:`sbom_report.html` file is generated in your build directory
   (the first one if you specify more than one build directory).
@@ -284,6 +286,40 @@ Detectors are executed from left to right using a list provided by the ``--licen
 Some detectors may run in parallel on all available CPU cores, which speeds up the detection time.
 Use ``-n`` option to limit number of parallel threads or processes.
 
+
+.. _west_sbom HTML report overview:
+
+HTML report overview
+********************
+
+The HTML report has following structure:
+
+* Summary of the report. It contains:
+
+   * At the beginning are notes.
+     They will give you some general information that you should pay attention while reading the report.
+   * The list of inputs.
+     It shows from where this report takes the files.
+   * The list of licenses.
+     It contains all licenses detected in the input files.
+   * The list of added license texts.
+     If a license is not in the `SPDX License List`_ and we have it in our internal database,
+     the license text will be added to the report.
+
+  You can click links in the summary to get more details about specific item.
+
+* List of files without any license information or with license information that cannot be detected automatically.
+  You have to investigate them manually to get the license information.
+
+* Details about each detected license:
+
+   * License identifier
+   * Information if it is a standard SPDX license
+   * License name if available
+   * Link to license text or more details if available
+   * All files from the input covered by this license
+
+* License texts added to this report.
 
 .. _west_sbom Extracting from build:
 
