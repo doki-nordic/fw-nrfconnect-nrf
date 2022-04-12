@@ -9,6 +9,7 @@ For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 '''
 
 import json
+import re
 from tempfile import NamedTemporaryFile
 from west import log
 from data_structure import Data, FileInfo, License
@@ -56,16 +57,18 @@ def detect(data: Data, optional: bool):
     for result, file, _ in concurrent_pool_iter(run_scancode, filtered):
         for i in result['files'][0]['licenses']:
 
-            if 'spdx_license_key' in i:
+            friendly_id = ''
+            if 'spdx_license_key' in i and i['spdx_license_key'] != '':
                 friendly_id = i['spdx_license_key']
-            else:
+            elif 'key' in i and i['key'] != '':
                 friendly_id = i['key']
             id = friendly_id.upper()
             if id == 'UNKNOWN-SPDX' or id == 'LICENSEREF-SCANCODE-UNKNOWN-SPDX':
-                friendly_id = i['matched_text'].replace('SPDX-License-Identifier:', '').strip()
+                friendly_id = re.sub(r'SPDX-License-Identifier:', '', i['matched_text'],
+                                     flags=re.I).strip()
                 id = friendly_id.upper()
-            elif not id:
-                log.wrn(f'Unknown spdx tag, file: {file.file_path}')
+            if id == '':
+                log.wrn(f'Invalid response from scancode-toolkit, file: {file.file_path}')
                 continue
 
             file.licenses.add(id)
@@ -101,5 +104,4 @@ def detect(data: Data, optional: bool):
                     license.name = name
                 if license.url is None:
                     license.url = url
-                license.custom = False
                 license.detectors.add('scancode-toolkit')
