@@ -35,8 +35,12 @@ Each file included in the repositories also has an `SPDX identifier`_ that menti
 
 If a folder or set of files is open source and included in |NCS| under its own license (for example, any of the Apache or MIT licenses), it will have either its own :file:`LICENSE` file included in the folder or the license information embedded inside the source files themselves.
 
-The `SPDX tool`_ is used to generate license reports on each release of the |NCS|.
-You can also use SPDX to generate license reports for your projects that are specific to the code included in your application.
+The west :ref:`ncs-sbom <west_sbom>` utility is used to generate a license report.
+It allows to generate report for the |NCS|, built application or for specific files.
+The tool is configurable in a wide range.
+It uses several detection methods e.g. based on spdx tags, searching license information in files or using the `Scancode-Toolkit`_.
+The report is generated in HTML and/or SPDX format.
+See the :ref:`west_sbom` documentation for more information.
 
 Documentation pages
 *******************
