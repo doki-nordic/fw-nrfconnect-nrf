@@ -10,6 +10,8 @@ the west ncs-sbom command.
 
 import copy
 from pathlib import Path
+from datetime import datetime
+from uuid import uuid4
 
 
 class DataBaseClass:
@@ -103,3 +105,5 @@ class Data(DataBaseClass):
     licenses_sorted: 'list[str]' = list()
     inputs: 'list[str]' = list()
     detectors: 'set[str]' = set()
+    timestamp: 'str' = datetime.utcnow().isoformat()
+    report_uuid: 'str' = uuid4()

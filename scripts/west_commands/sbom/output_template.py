@@ -11,10 +11,16 @@ import os
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
-from jinja2 import Template
+from jinja2 import Template, filters
 from west import log
 from data_structure import Data
 
+
+def rel_to_this_file(file_path: Path) -> Path:
+    '''Convert a path to a relative version'''
+    return './' + os.path.relpath(file_path, os.getcwd())
+
+filters.FILTERS['rel_to_this_file'] = rel_to_this_file
 
 def data_to_dict(data: Any) -> dict:
     '''Convert object to dict by copying public attributes to a new dictionary.'''
