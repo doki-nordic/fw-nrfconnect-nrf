@@ -103,6 +103,8 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'detected any license.')
     parser.add_argument('--output-html', default=None,
                         help='Generate output HTML report.')
+    parser.add_argument('--output-spdx', default=None,
+                        help='Generate output SPDX report.')
     parser.add_argument('--output-cache-database', default=None,
                         help='Generate a license database for the files using scancode-toolkit')
     parser.add_argument('--input-cache-database', default=None,

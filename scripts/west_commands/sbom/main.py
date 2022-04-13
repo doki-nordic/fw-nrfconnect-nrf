@@ -39,6 +39,7 @@ detectors = {
 
 generators = {
     'html': 'templates/report.html.jinja',
+    'spdx': 'templates/raport.spdx.jinja',
     'cache_database': 'templates/cache.database.jinja',
 }
 

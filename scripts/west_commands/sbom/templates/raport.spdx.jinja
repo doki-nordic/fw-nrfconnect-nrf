@@ -1,0 +1,26 @@
+# Document Information
+
+SPDXVersion: SPDX-2.2
+SPDXID: SPDXRef-DOCUMENT
+DocumentComment: <text>Generated with ncs-sbom.
+For details, see https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/introduction.html#about-the-ncs-license.</text>
+
+
+# Creation Info
+
+Creator: Tool: ncs-sbom
+Created: <date_and_time>
+
+{% for file in files %}
+# File
+
+FileName: {{file.file_rel_path}}
+FileCheckSum: SHA1: {{file.sha1}}
+{% for license in file.licenses %}LicenseInfoInFile: {{license}} {% endfor %}
+{% endfor %}
+
+# Extracted Licenses
+{% for license in licenses_sorted %}
+LicenseName: {{licenses[license].friendly_id|e}}
+ExtractedText: <text>{{licenses[license].text|e}}</text>
+{% endfor%}
