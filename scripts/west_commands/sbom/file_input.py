@@ -28,15 +28,18 @@ def is_glob(glob: str) -> bool:
 def glob_with_abs_patterns(path: Path, glob: str) -> Generator:
     '''Wrapper for Path.glob allowing absolute patterns in the glob input.'''
     glob_path = Path(glob)
-    if glob_path.is_absolute():
-        m = GLOB_PATTERN_START.search(glob)
-        if m is None:
-            return (glob_path, )
-        parent = Path(glob[:m.start() + 1]).parent
-        relative = glob_path.relative_to(parent)
-        return parent.glob(str(relative))
-    else:
-        return path.glob(glob)
+    try:
+        if glob_path.is_absolute():
+            m = GLOB_PATTERN_START.search(glob)
+            if m is None:
+                return (glob_path, )
+            parent = Path(glob[:m.start() + 1]).parent
+            relative = glob_path.relative_to(parent)
+            return tuple(parent.glob(str(relative)))
+        else:
+            return tuple(path.glob(glob))
+    except ValueError as ex:
+        raise SbomException(f'Invalid glob "{glob}": {ex}') from ex
 
 
 def resolve_globs(path: Path, globs: 'list[str]') -> 'set(Path)':

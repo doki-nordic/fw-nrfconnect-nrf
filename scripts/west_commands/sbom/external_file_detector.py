@@ -26,7 +26,7 @@ SPDX_TAG_RE = re.compile(
     re.IGNORECASE)
 
 APPLY_TO_FILES_TAG_RE = re.compile(
-    r'(?:^|[^a-zA-Z0-9\-])NCS-SBOM-Apply-To-File\s*:\s*(.+?)\r?\n',
+    r'(?:^|[^a-zA-Z0-9\-])NCS-SBOM-Apply-To-File\s*:\s*(?:"(.*?[^\\])"|([^\s]+))',
     re.IGNORECASE)
 
 EXTERNAL_FILE_RE = re.compile(
@@ -57,9 +57,17 @@ def parse_license_file(file: Path):
         return
     log.dbg(f'External file {file} with {licenses}')
     for m in APPLY_TO_FILES_TAG_RE.finditer(content):
-        glob = m.group(1).strip()
+        if m.group(1) is not None:
+            glob = re.sub(r'\\(.)', r'\1', m.group(1).strip())
+        else:
+            glob = m.group(2).strip()
         log.dbg(f'  describes {glob}:', level=log.VERBOSE_EXTREME)
-        for matched in file.parent.glob(glob):
+        try:
+            matched_files = tuple(file.parent.glob(glob))
+        except ValueError as ex:
+            log.wrn(f'Invalid glob "{glob}": {ex}')
+            continue
+        for matched in matched_files:
             matched_str = str(matched)
             log.dbg(f'    {matched_str}', level=log.VERBOSE_EXTREME)
             if matched_str not in detected_files:
