@@ -9,6 +9,7 @@ For more details see: https://scancode-toolkit.readthedocs.io/en/stable/
 '''
 
 import json
+import os
 import re
 from tempfile import NamedTemporaryFile
 from west import log
@@ -32,7 +33,7 @@ def check_scancode():
 
 def run_scancode(file: FileInfo) -> 'set(str)':
     '''Execute scancode and get license identifier from its results.'''
-    with NamedTemporaryFile(mode="w+") as output_file:
+    with NamedTemporaryFile(mode="w+", delete=False) as output_file:
         command_execute(args.scancode, '-cl',
                         '--json', output_file.name,
                         '--license-text',
@@ -40,7 +41,10 @@ def run_scancode(file: FileInfo) -> 'set(str)':
                         '--quiet',
                         file.file_path, allow_stderr=True)
         output_file.seek(0)
-        return json.loads(output_file.read())
+        result = json.loads(output_file.read())
+        output_file.close()
+        os.unlink(output_file.name)
+        return result
 
 
 def detect(data: Data, optional: bool):

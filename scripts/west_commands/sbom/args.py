@@ -165,7 +165,9 @@ def init_args(allowed_detectors: dict):
             and (args.input_files is None or len(args.input_files) == 0)
             and (args.input_list_file is None or len(args.input_list_file) == 0)):
         from input_build import get_default_build_dir # Avoid circular import
-        args.build_dir = [[get_default_build_dir()]]
+        default_build_dir = get_default_build_dir()
+        if default_build_dir is not None:
+            args.build_dir = [[default_build_dir]]
 
     # By default, place HTML output in the build directory
     if (args.output_html is None) and (args.build_dir is not None):
