@@ -49,6 +49,8 @@ except Exception:
     print('Cannot read old version')
     update = True
 
+data.licenses = sorted(data.licenses, key=lambda x: x.licenseId)
+
 if update:
     print('Updating')
     with open(output, 'w') as fd:
