@@ -35,7 +35,7 @@ The process of using the ``ncs-sbom`` command involves the following steps:
 Requirements
 ************
 
-The SBOM command requires additional Python packages to be installed.
+The ``ncs-sbom` command requires additional Python packages to be installed.
 
 Use the following command to install the requirements.
 
@@ -138,7 +138,9 @@ You can also mix them, for example, to generate a report for the application and
      --input-files *file1* *file2* ...
 
   Each argument of this option can contain globs as defined by `Python's Path.glob`_ with two additions:
-  support for absolute paths and exclamation mark ``!`` to exclude files.
+
+  * Support for absolute paths.
+  * Exclamation mark ``!`` to exclude files.
 
   For example, if you want to include all :file:`.c` files from the current directory and all subdirectories recursively:
 
@@ -184,7 +186,7 @@ You can specify the format of the report output using the ``output`` argument.
 
   :ref:`west_sbom HTML report overview` provides more details about the report.
 
-  If you use ``-d`` option, you do not need to specify the report format.
+  If you use ``-d`` option, you do not need to specify any output argument.
   The :file:`sbom_report.html` file is generated in your build directory
   (the first one if you specify more than one build directory).
 
@@ -278,7 +280,7 @@ Detectors are executed from left to right using a list provided by the ``--licen
      --optional-license-detectors scancode-toolkit
 
 Some detectors may run in parallel on all available CPU cores, which speeds up the detection time.
-Use ``-n`` option to limit number of parallel threads or processes.
+Use the ``-n`` option to limit the number of parallel threads or processes.
 
 .. _west_sbom HTML report overview:
 
