@@ -49,7 +49,7 @@ def init():
         for license in get_license_texts():
             results = detect_text(license.text)
             results.discard(license.id)
-            if len(results):
+            if len(results) > 0:
                 subset[license.id] = results
                 log.dbg(f'{results} is a subset of {license.id}', level=log.VERBOSE_VERY)
         subset_licenses.update(subset)

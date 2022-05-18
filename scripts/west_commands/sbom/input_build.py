@@ -374,7 +374,9 @@ def check_external_tools(build_dir: Path):
         try:
             command_execute(tool_path, '--version', allow_stderr=True)
             return True
-        except:
+        except: # pylint: disable=bare-except
+            # We are checking if calling this command works at all,
+            # so ANY kind of problem (exception) should return "False" value.
             return False
 
     def test_tool(arg_name: str, cmake_var_name: str) -> str:

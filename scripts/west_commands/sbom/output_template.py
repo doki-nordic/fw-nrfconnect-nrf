@@ -14,7 +14,8 @@ from typing import Any
 from urllib.parse import quote
 from jinja2 import Template, filters
 from west import log
-from data_structure import Data, FileInfo
+from data_structure import Data, FileInfo  # pylint: disable=unused-import
+                                           # Ignoring false warning from pylint, FileInfo is used.
 
 
 def rel_to_this_file(file_path: Path) -> Path:

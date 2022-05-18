@@ -67,7 +67,7 @@ def detect(data: Data, optional: bool):
             elif 'key' in i and i['key'] != '':
                 friendly_id = i['key']
             id = friendly_id.upper()
-            if id == 'UNKNOWN-SPDX' or id == 'LICENSEREF-SCANCODE-UNKNOWN-SPDX':
+            if id in ('UNKNOWN-SPDX', 'LICENSEREF-SCANCODE-UNKNOWN-SPDX'):
                 friendly_id = re.sub(r'SPDX-License-Identifier:', '', i['matched_text'],
                                      flags=re.I).strip()
                 id = friendly_id.upper()

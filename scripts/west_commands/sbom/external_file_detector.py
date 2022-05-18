@@ -42,9 +42,10 @@ def parse_license_file(file: Path):
     try:
         with open(file, 'r', encoding='8859') as fd:
             content = fd.read()
-    except:
+    except: # pylint: disable=bare-except
         # Going up to root directory may cause some unexpected IO/permission problems.
-        # Ignore them all and assume that a valid external file must be accessible.
+        # It is ok to ignore them all, because we can assume that a valid external file
+        # must be accessible.
         log.dbg(f'Exception reading file "{file}": {traceback.format_exc()}',
                 level=log.VERBOSE_VERY)
         return
@@ -80,7 +81,10 @@ def search_dir(directory: Path):
         return
     try:
         listdir = list(directory.iterdir())
-    except:
+    except: # pylint: disable=bare-except
+        # Going up to root directory may cause some unexpected IO/permission problems.
+        # It is ok to ignore them all, because we can assume that a valid external file
+        # must be accessible.
         log.dbg(f'Exception reading directory "{directory}": {traceback.format_exc()}',
                 level=log.VERBOSE_VERY)
         listdir = list()
