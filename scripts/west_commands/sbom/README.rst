@@ -8,7 +8,7 @@ Software Bill of Materials
    :depth: 2
 
 The Software Bill of Materials (SBOM) is a :ref:`west <zephyr:west>` extension command that can be invoked by ``west ncs-sbom``.
-It provides a list of used licenses for an application build or the specific files.
+It provides a list of used licenses for an application build or specific files.
 
 .. note::
     Generating a list of licenses from an application build is experimental.
@@ -344,16 +344,15 @@ To change the target or specify multiple targets, you can add them after the bui
    -d build_directory *target1.elf* *target2.elf*
 
 There are two redundant methods for improving the correctness of the above algorithm:
-``
 
 * Each library is examined using the GNU ``ar`` tool.
 
   If the list of files returned by the GNU ``ar`` tool is covered by the list returned from the ``ninja``, the list is assumed to be valid.
   Otherwise, the library is assumed to be a leaf, so it is shown in the report and its inputs are not analyzed further.
 
-* The ``ncs-sbom`` pareses the :file:`.map` file created during the :file:`zephyr/zephyr.elf` linking.
+* The ``ncs-sbom`` parses the :file:`.map` file created during the :file:`zephyr/zephyr.elf` linking.
 
-  It gives a list of all object files and libraries linked to the :file:`zephyr/zephyr.elf` file.
+  It provides a list of all object files and libraries linked to the :file:`zephyr/zephyr.elf` file.
   The script ends with a fatal error if any file in the :file:`.map` file is not visible by ``ninja``.
 
   Exceptions are the runtime and standard libraries.
