@@ -343,7 +343,7 @@ To change the target or specify multiple targets, you can add them after the bui
 
    -d build_directory *target1.elf* *target2.elf*
 
-There are two redundant methods for improving the correctness of the above algorithm:
+There are two additional methods for improving the correctness of the above algorithm:
 
 * Each library is examined using the GNU ``ar`` tool.
 
