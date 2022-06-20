@@ -1,5 +1,8 @@
 # nrfx documentation build configuration file
 
+# Changing a file that can have any license information, but
+# it will generate a warning.
+
 from pathlib import Path
 import sys
 import os

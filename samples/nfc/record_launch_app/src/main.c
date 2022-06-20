@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+// Changing a file with correct license identifier in the header.
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/reboot.h>
 
