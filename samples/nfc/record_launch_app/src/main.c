@@ -2,6 +2,7 @@
  * Copyright (c) 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * SPDX-License-Identifier: Second-license-that-is-invalid
  */
 
 #include <zephyr/kernel.h>

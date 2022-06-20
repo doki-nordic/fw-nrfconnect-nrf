@@ -2,6 +2,7 @@
 * Copyright (c) 2022 Nordic Semiconductor ASA
 *
 * SPDX-License-Identifier: Apache-2.0
+* Change in file that is not covered be check
 */
 
 /delete-node/ &ipc0;

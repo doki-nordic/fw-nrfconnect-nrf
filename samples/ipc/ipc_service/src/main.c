@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>
-
+// change in file that has not compatible license
 #include <zephyr/logging/log.h>
 
 #include <zephyr/ipc/ipc_service.h>
