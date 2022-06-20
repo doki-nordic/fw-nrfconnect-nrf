@@ -1,0 +1,70 @@
+name: License Check
+
+on: pull_request
+
+jobs:
+  license_job:
+    runs-on: ubuntu-latest
+    name: Run license checks on patch series (PR)
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+      with:
+        path: ncs/nrf
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-doc-pip
+
+    - name: Install python dependencies
+      working-directory: ncs/nrf
+      run: |
+        pip3 install -U pip
+        pip3 install -U -r scripts/ci/requirements.txt
+        export PATH="$HOME/.local/bin:$PATH"
+        grep -E "west" scripts/requirements-fixed.txt | xargs pip3 install -U
+        pip3 show -f west
+
+    - name: West init and update
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      working-directory: ncs/nrf
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export PATH="$HOME/bin:$PATH"
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git remote -v
+        git rebase origin/${BASE_REF}
+        # debug
+        git log  --pretty=oneline | head -n 10
+        west init -l .
+        west update
+        west zephyr-export
+
+    - name: Run License Checks
+      id: license_checks
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      working-directory: ncs/nrf
+      if: contains(github.event.pull_request.user.login, 'dependabot[bot]') != true
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export PATH="$HOME/bin:$PATH"
+        export ZEPHYR_BASE="$(dirname "$(pwd)")/zephyr"
+        # debug
+        ls -la
+        git log --pretty=oneline | head -n 10
+        scripts/ci/check_license.py --github -c origin/${BASE_REF}..
+
+    - name: Upload Results
+      uses: actions/upload-artifact@v2
+      continue-on-error: True
+      if: always() && contains(github.event.pull_request.user.login, 'dependabot[bot]') != true
+      with:
+        name: licenses.xml
+        path: ncs/nrf/licenses.xml
