@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+// Changing a file with invalid license identifier in the header.
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <string.h>

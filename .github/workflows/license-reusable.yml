@@ -1,10 +1,47 @@
+#
+# You can call this workflow in your repository. See the example caller workflow:
+#
+# --------------------------------------------------------------------------------------
+# name: My License Check Caller
+# on: pull_request
+# jobs:
+#   call-workflow:
+#     uses: nrfconnect/sdk-nrf/.github/workflows/license-reusable.yml@main
+#     with:
+#       path: my_module_path
+#       license_allow_list: my_module_path/license_allow_list.yaml
+#         # You can find more details about the inputs below.
+# --------------------------------------------------------------------------------------
+
 name: Reusable License Check
 
 on:
   workflow_call:
     inputs:
+  
       path:
+        # Required path to your module relative to west workspace.
         type: string
+        required: true
+
+      license_allow_list:
+        # Optional path to your custom license allow list file relative to west workspace.
+        # By default, the list form the "sdk-nrf" repository is used. For details about
+        # format of the list, see "scripts/ci/license_allow_list.yaml" in the
+        # "sdk-nrf" repository.
+        type: string
+        default: nrf/scripts/ci/license_allow_list.yaml
+
+      nrf_repo:
+        # Optional URL of the custom "sdk-nrf" repository that contains license check
+        # script and the west manifest. By default official "sdk-nrf" repository is used.
+        type: string
+        default: https://github.com/nrfconnect/sdk-nrf
+
+      nrf_rev:
+        # Optional revision of the "sdk-nrf" repository. By default, "main" is used.
+        type: string
+        default: main
 
 jobs:
   license_job:
@@ -56,7 +93,7 @@ jobs:
         if [ "${{ inputs.path }}" = "nrf" ]; then
             west init -l nrf
         else
-            west init -m https://github.com/nrfconnect/sdk-nrf
+            west init -m ${{ inputs.nrf_repo }} --mr ${{ inputs.nrf_rev }}
         fi
         west update zephyr
         west zephyr-export
@@ -80,7 +117,10 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         export PATH="$HOME/bin:$PATH"
-        ${ZEPHYR_BASE}/../nrf/scripts/ci/check_license.py --github -c origin/${BASE_REF}..
+        ${ZEPHYR_BASE}/../nrf/scripts/ci/check_license.py \
+            --github \
+            -l ${ZEPHYR_BASE}/../${{ inputs.license_allow_list }} \
+            -c origin/${BASE_REF}..
 
     - name: Upload results
       uses: actions/upload-artifact@v2

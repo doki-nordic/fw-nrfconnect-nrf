@@ -7,6 +7,8 @@
 # into the output report. If many non-standard entries with the same id is here,
 # only the fist will be included into the report.
 
+# Changing file that can have any kind of license.
+
 
 - id: LicenseRef-Nordic-5-Clause
   name: Nordic 5-Clause License

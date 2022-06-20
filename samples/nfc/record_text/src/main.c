@@ -1,7 +1,9 @@
 /*
  * Copyright (c) 2018 Nordic Semiconductor ASA
  *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * SPDX-License-Identifier: LicenceRef-Nordic-5-Clause
+ *
+ * Adding misspelled license identifier in the header.
  */
 
 #include <zephyr/kernel.h>
