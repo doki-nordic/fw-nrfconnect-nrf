@@ -20,6 +20,13 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-doc-pip
 
+    - name: Restore West cache
+      id: west_cache
+      uses: actions/cache@v1
+      with:
+        path: cache
+        key: dummy-key-349879234354
+
     - name: Install python dependencies
       working-directory: ncs/nrf
       run: |
@@ -43,8 +50,16 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l .
+        mkdir -p ../../cache
+        (cd ../../cache; find . -type d -name ".git" -print) | grep -v './nrf/' | while read dir; do mkdir -p ../$dir; cp -R ../../cache/$dir ../$dir/..; (cd ../$dir/..; git reset --hard); done
         west update
         west zephyr-export
+
+    - name: Update West cache
+      if: steps.west_cache.outputs.cache-hit != 'true'
+      working-directory: ncs
+      run: |
+        find . -type d -name ".git" -print | grep -v './nrf/' | while read dir; do mkdir -p ../cache/$dir; cp -R $dir ../cache/$dir/..; done
 
     - name: Run License Checks
       id: license_checks
