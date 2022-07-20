@@ -23,20 +23,21 @@ ANY_LICENSE_ALLOWED = 'Any license is allowed for this file.'
 LICENSE_WARNING = '"*" license is allowed for this file, but it is not recommended.'
 NONE_LICENSE_WARNING = ('Missing license information is allowed for this file, but it is '
                         'recommended to add one.')
-ANY_LICENSE_WARNING = ('Any license is allowed for this file, but it is recommended to use more '
-                       'suitable.')
+ANY_LICENSE_WARNING = ('Any license is allowed for this file, but it is recommended to use a more '
+                       'suitable one.')
 LICENSE_ERROR = '"*" license is not allowed for this file.'
 NONE_LICENSE_ERROR = 'Missing license information is not allowed for this file.'
 SKIP_MISSING_FILE_TEXT = 'The file does not exist anymore.'
 SKIP_DIRECTORY_TEXT = 'This is a directory.'
 RECOMMENDATIONS_TEXT = textwrap.dedent('''\
     ===============================================================================
-    You have some license problems. You can check following things:
-    1. The files in the commits are covered by license allowed in the NCS.
-    2. The source files have correct "SPDX-License-Identifier" tag.
-    3. The libraries have associated external license file and tags contained in it
-       are correct. For details, see documentation for the Software Bill of
-       Materials script.
+    You have some license problems. Check the following:
+    * The files in the commits are covered by a license allowed in the nRF Connect
+      SDK.
+    * The source files have a correct "SPDX-License-Identifier" tag.
+    * The libraries have an associated external license file and the tags contained
+      in it are correct. For details, see documentation for the Software Bill of
+      Materials script.
     ===============================================================================
 ''')
 
@@ -56,11 +57,10 @@ def parse_args():
     return parser.parse_args()
 
 def unlink_quietly(path: Path) -> None:
-    '''Delete a file and ignore all errors.'''
+    '''Delete a file if it exists.'''
     try:
         path.unlink()
-    except: # pylint: disable=bare-except
-        # The unlink should be always silent even for failures.
+    except FileNotFoundError:
         pass
 
 class FileLicenseChecker:
@@ -149,22 +149,26 @@ class PatchLicenseChecker:
             sys.exit(2)
         return stdout.rstrip()
 
-    def report(self, label: str, message: str, file_name:'str|Path' = '<none>', license:str = ''):
+    def report(self, label: str, message: str, file_name: 'str|Path' = '<none>', license: str = ''):
         '''Report results to the user.'''
         file_name = str(file_name)
-        # Print to stdout with optional GitHub Actions Workflow commands.
-        if label not in ('error', 'warning'):
-            print(f'{label.upper()}: {file_name}: {message}')
+        # Print to stdout/stderr with optional GitHub Actions Workflow commands.
+        if not self.args.github:
+            if label in ('error', 'warning'):
+                print(f'{label.upper()}: {file_name}: {message}', file=sys.stderr)
+            else:
+                print(f'{label.upper()}: {file_name}: {message}')
         else:
-            if self.args.github:
+            print(f'{file_name}: ')
+            if label in ('error', 'warning'):
                 if file_name != '<none>':
                     file_path = (self.west_workspace / file_name).relative_to(self.git_top)
                 else:
                     file_path = file_name
-                print(f'::{label} file={file_path},title=License Problem::{file_path}: ' +
+                print(f'::{label} file={file_path},title=License Problem::' +
                       message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
             else:
-                print(f'{label.upper()}: {file_name}: {message}', file=sys.stderr)
+                print(f'{label.upper()}: {message}')
         # Put result in JUnit file.
         test_case = junit_xml.TestCase(file_name + (f':{license}' if license else ''),
                                        'LicenseCheck')
@@ -195,7 +199,7 @@ class PatchLicenseChecker:
                  for f in files if f.strip()]
         return files
 
-    def skip_files(self, files:'list[Path]') -> 'list[Path]':
+    def skip_files(self, files: 'list[Path]') -> 'list[Path]':
         '''
         Skip files that will not be checked because they are not exist or any license
         is allowed in them.
@@ -212,17 +216,17 @@ class PatchLicenseChecker:
                 new_list.append(file_name)
         return new_list
 
-    def detect_licenses(self, files:'list[Path]') -> 'list[dict]':
+    def detect_licenses(self, files: 'list[Path]') -> 'list[dict]':
         '''Use the "west ncs-sbom" command to detect the licenses of the files.'''
         with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.txt', prefix='_tmp',
-                                        dir=self.west_workspace, delete=False) as tmp:
+                                         dir=self.west_workspace, delete=False) as tmp:
             for file_name in files:
                 tmp.write(f'{file_name}\n')
             tmp_list = Path(tmp.name)
             tmp_json = tmp_list.with_suffix('.json')
         try:
             self.run('west', 'ncs-sbom', '--input-list-file', tmp_list, '--license-detectors',
-                'spdx-tag,full-text,external-file', '--output-cache-database', tmp_json)
+                     'spdx-tag,full-text,external-file', '--output-cache-database', tmp_json)
             with open(tmp_json, 'r', encoding='utf-8') as fd:
                 output = json.load(fd)
                 return output['files']
