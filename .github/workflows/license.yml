@@ -43,7 +43,7 @@ jobs:
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l .
-        west update
+        west update zephyr
         west zephyr-export
 
     - name: Run License Checks
