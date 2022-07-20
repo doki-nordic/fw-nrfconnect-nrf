@@ -11,11 +11,10 @@ import sys
 import shlex
 import subprocess
 import tempfile
-import html
 import textwrap
-import time
 from pathlib import Path
 import yaml
+import junit_xml
 
 # Messages shown in the output
 LICENSE_ALLOWED = '"*" license is allowed for this file.'
@@ -119,7 +118,7 @@ class PatchLicenseChecker:
     license_checker: FileLicenseChecker
     git_top: Path
     west_workspace: Path
-    junit: str
+    junit_test_cases: str
     total_tests: int
     total_skipped: int
     total_errors: int
@@ -138,6 +137,7 @@ class PatchLicenseChecker:
                                        cwd=cwd)
         except OSError as e:
             self.report('error', f'Failed to run "{run_str}": {e}')
+            self.write_junit()
             sys.exit(2)
         stdout, stderr = process.communicate()
         stdout = stdout.decode('utf-8')
@@ -145,6 +145,7 @@ class PatchLicenseChecker:
         if process.returncode or stderr:
             self.report('error', f'Command "{run_str}" exited with {process.returncode}\n'
                                  f'==stdout==\n{stdout}\n==stderr==\n{stderr}')
+            self.write_junit()
             sys.exit(2)
         return stdout.rstrip()
 
@@ -156,28 +157,24 @@ class PatchLicenseChecker:
             print(f'{label.upper()}: {file_name}: {message}')
         else:
             if self.args.github:
-                file_path = (self.west_workspace / file_name).relative_to(self.git_top)
+                if file_name != '<none>':
+                    file_path = (self.west_workspace / file_name).relative_to(self.git_top)
+                else:
+                    file_path = file_name
                 print(f'::{label} file={file_path},title=License Problem::{file_path}: ' +
                       message.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'))
             else:
                 print(f'{label.upper()}: {file_name}: {message}', file=sys.stderr)
         # Put result in JUnit file.
-        license_xml = f':{html.escape(license)}' if license else ''
+        test_case = junit_xml.TestCase(file_name + (f':{license}' if license else ''),
+                                       'LicenseCheck')
         if label == 'error':
-            self.junit += (f'<testcase name="{html.escape(file_name)}{license_xml}" '
-                f'classname="LicenseCheck"><failure message="{html.escape(message)}" '
-                f'type="failure"/></testcase>')
+            test_case.add_failure_info(message)
         elif label == 'warning':
-            self.junit += (f'<testcase name="{html.escape(file_name)}{license_xml}" '
-                f'classname="LicenseCheck"><skipped message="WARNING: '
-                f'{html.escape(message)}"/></testcase>')
+            test_case.add_skipped_info('WARNING: ' + message)
         elif label == 'skip':
-            self.junit += (f'<testcase name="{html.escape(file_name)}{license_xml}" '
-                f'classname="LicenseCheck"><skipped message="{html.escape(message)}"/>'
-                f'</testcase>')
-        else:
-            self.junit += (f'<testcase name="{html.escape(file_name)}{license_xml}" '
-                f'classname="LicenseCheck"/>')
+            test_case.add_skipped_info(message)
+        self.junit_test_cases.append(test_case)
         # Increment counters.
         self.total_tests += 1
         if label == 'error':
@@ -263,34 +260,22 @@ class PatchLicenseChecker:
             print('License check successful.')
             return True
 
-    def write_junit(self, total_time: float):
+    def write_junit(self):
         '''Write the JUnit file.'''
-        self.args.output.write_text(f'<testsuites '
-            f'tests="{self.total_tests}" '
-            f'failures="{self.total_errors}" errors="0" '
-            f'skipped="{self.total_skipped + self.total_warnings}" '
-            f'time="{total_time}">'
-            f'<testsuite name="LicenseCheck" '
-            f'tests="{self.total_tests}" '
-            f'failures="{self.total_errors}" errors="0" '
-            f'skipped="{self.total_skipped + self.total_warnings}" '
-            f'time="{total_time}">'
-            f'{self.junit}'
-            f'</testsuite>'
-            f'</testsuites>')
+        test_suite = junit_xml.TestSuite("LicenseCheck", self.junit_test_cases)
+        with open(self.args.output, 'w') as fd:
+            junit_xml.TestSuite.to_file(fd, [test_suite], prettyprint=False)
 
     def check(self) -> bool:
         '''Do the license check based on command line arguments provided in the constructor.'''
 
-        start_time = time.time()
-
-        self.git_top = Path(self.run('git', 'rev-parse', '--show-toplevel')).resolve()
-        self.west_workspace = Path(self.git_top).parent
-        self.junit = ''
+        self.junit_test_cases = []
         self.total_tests = 0
         self.total_skipped = 0
         self.total_errors = 0
         self.total_warnings = 0
+        self.git_top = Path(self.run('git', 'rev-parse', '--show-toplevel')).resolve()
+        self.west_workspace = Path(self.git_top).parent
 
         print(f'Repository top directory: {self.git_top}')
         print(f'West workspace directory: {self.west_workspace}')
@@ -299,7 +284,7 @@ class PatchLicenseChecker:
         files = self.skip_files(files)
         detected = self.detect_licenses(files)
         success = self.show_results(detected)
-        self.write_junit(time.time() - start_time)
+        self.write_junit()
 
         return success
 
