@@ -1,0 +1,91 @@
+name: Reusable License Check
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        type: string
+
+jobs:
+  license_job:
+    runs-on: ubuntu-latest
+    name: Run license checks on patch series (PR)
+    steps:
+    - name: Checkout the code
+      uses: actions/checkout@v2
+      with:
+        path: ncs/${{ inputs.path }}
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-doc-pip
+
+    - name: Install python dependencies
+      run: |
+        pip3 install -U pip
+        pip3 install -U setuptools
+        export PATH="$HOME/.local/bin:$PATH"
+        pip3 install -U wheel
+        pip3 install --user -U west
+        pip3 show -f west
+
+    - name: Git config and rebase
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      working-directory: ncs/${{ inputs.path }}
+      run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        git remote -v
+        git branch
+        git rebase origin/${BASE_REF}
+        # debug
+        git log --pretty=oneline | head -n 10
+
+    - name: West init and update
+      working-directory: ncs
+      env:
+        PR_REF: ${{ github.event.pull_request.head.sha }}
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export PATH="$HOME/bin:$PATH"
+        if [ "${{ inputs.path }}" = "nrf" ]; then
+            west init -l nrf
+        else
+            west init -m https://github.com/nrfconnect/sdk-nrf
+        fi
+        west update zephyr
+        west zephyr-export
+        echo "ZEPHYR_BASE=$(pwd)/zephyr" >> $GITHUB_ENV
+        # debug
+        ( cd ${{ inputs.path }}; echo "${{ inputs.path }}"; git log --pretty=oneline --max-count=10 )
+        ( cd nrf; echo "nrf"; git log --pretty=oneline --max-count=10 )
+        ( cd zephyr; echo "zephyr"; git log --pretty=oneline --max-count=10 )
+
+    - name: Install license check script dependencies
+      run: |
+        pip3 install -U -r ncs/nrf/scripts/ci/requirements.txt
+
+    - name: Run license checks
+      id: license_checks
+      env:
+        BASE_REF: ${{ github.base_ref }}
+        ZEPHYR_BASE: ${{ env.ZEPHYR_BASE }}
+      working-directory: ncs/${{ inputs.path }}
+      if: contains(github.event.pull_request.user.login, 'dependabot[bot]') != true
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        export PATH="$HOME/bin:$PATH"
+        ${ZEPHYR_BASE}/../nrf/scripts/ci/check_license.py --github -c origin/${BASE_REF}..
+
+    - name: Upload results
+      uses: actions/upload-artifact@v2
+      continue-on-error: True
+      if: always() && contains(github.event.pull_request.user.login, 'dependabot[bot]') != true
+      with:
+        name: licenses.xml
+        path: ncs/${{ inputs.path }}/licenses.xml
