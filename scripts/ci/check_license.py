@@ -201,8 +201,8 @@ class PatchLicenseChecker:
 
     def skip_files(self, files: 'list[Path]') -> 'list[Path]':
         '''
-        Skip files that will not be checked because they are not exist or any license
-        is allowed in them.
+        Remove files from the list, because they do not exist, or they can have any license.
+        A new list is returned.
         '''
         new_list = []
         for file_name in files:
@@ -271,7 +271,7 @@ class PatchLicenseChecker:
             junit_xml.TestSuite.to_file(fd, [test_suite], prettyprint=False)
 
     def check(self) -> bool:
-        '''Do the license check based on command line arguments provided in the constructor.'''
+        '''Do the license check based on command-line arguments provided in the constructor.'''
 
         self.junit_test_cases = []
         self.total_tests = 0
