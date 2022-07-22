@@ -33,3 +33,11 @@ none: |
 # Ignore all detected licenses in that file.
 any: |
   .*/license-texts.yaml$
+
+# Allow different licenses from external sources
+LicenseRef-west-ncs-sbom-iperf-BSD-3-Clause: "^nrf/ext/"
+Apache-2.0: "^nrf/ext/"
+curl: "^nrf/ext/"
+MIT: "^nrf/ext/"
+BSD-3-CLAUSE: "^nrf/ext/"
+BSD-2-CLAUSE-NETBSD: "^nrf/ext/"

@@ -16,6 +16,7 @@ from pathlib import Path
 import yaml
 import junit_xml
 
+
 # Messages shown in the output
 LICENSE_ALLOWED = '"*" license is allowed for this file.'
 NONE_LICENSE_ALLOWED = 'Missing license information is allowed for this file.'
@@ -41,6 +42,7 @@ RECOMMENDATIONS_TEXT = textwrap.dedent('''\
     ===============================================================================
 ''')
 
+
 def parse_args():
     '''Parse command line arguments.'''
     default_allow_list = Path(__file__).parent / 'license_allow_list.yaml'
@@ -52,9 +54,10 @@ def parse_args():
                         help='''Name of outfile in JUnit format, default is ./licenses.xml''')
     parser.add_argument('-l', '--allow-list', type=Path, default=default_allow_list,
                         help=f'Allow list file, default is {default_allow_list}')
-    parser.add_argument('-g', '--github', action='store_true',
+    parser.add_argument('--github', action='store_true',
                         help='Add GitHub Actions Workflow commands to the stdout.')
     return parser.parse_args()
+
 
 def unlink_quietly(path: Path) -> None:
     '''Delete a file if it exists.'''
@@ -62,6 +65,7 @@ def unlink_quietly(path: Path) -> None:
         path.unlink()
     except FileNotFoundError:
         pass
+
 
 class FileLicenseChecker:
     '''Class that checks if a license is allowed for a file.'''
@@ -110,6 +114,7 @@ class FileLicenseChecker:
             if pattern.search(file_path):
                 allow = value
         return allow
+
 
 class PatchLicenseChecker:
     '''Check licenses for a git patch.'''
@@ -292,6 +297,7 @@ class PatchLicenseChecker:
 
         return success
 
+
 def main():
     '''Main function.'''
     args = parse_args()
@@ -299,6 +305,7 @@ def main():
     success = checker.check()
     if not success:
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()
