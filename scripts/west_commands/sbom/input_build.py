@@ -9,7 +9,9 @@ Get input files from an application build directory.
 
 import os
 import pickle
+import platform
 import re
+import shutil
 from pathlib import Path
 from west import log, util
 from args import args
@@ -154,11 +156,16 @@ class ExternalToolDetector:
         lines : str = command_execute(args.ninja, '-t', 'commands', target, cwd=build_dir)
         for line in lines.split('\n'):
             current_dir = build_dir
+            if re.match(r'cmd(\.exe)?\s+\/C\s+', line, re.IGNORECASE):
+                line = re.sub(r'^cmd(?:\.exe)?\s+\/C\s+(?:"(.+)"|(.+))$', r'\1\2', line, 0, re.IGNORECASE)
             commands = line.split(' && ')
             for command in commands:
                 command = command.strip()
                 if command.startswith('cd '):
-                    out = command_execute(f'{command} && pwd', shell=True, cwd=current_dir) ## TODO: does it work in Windows?
+                    if platform.system() == 'Windows':
+                        out = command_execute(shutil.which('cmd.exe'), '/C', f'{command} && cd', cwd=current_dir)
+                    else:
+                        out = command_execute(f'{command} && pwd', shell=True, cwd=current_dir)
                     for out_line in out.split('\n'):
                         out_line = out_line.strip()
                         if out_line != '':

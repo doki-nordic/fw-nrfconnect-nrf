@@ -29,8 +29,8 @@ def command_execute(*cmd_args: 'tuple[str|Path]', cwd: 'str|Path|None' = None,
     cmd_args = tuple(str(x) for x in cmd_args)
     if cwd is not None:
         cwd = str(cwd)
-    with NamedTemporaryFile(delete=(not return_path), mode='w+') as out_file, \
-            NamedTemporaryFile(mode='w+') as err_file:
+    with NamedTemporaryFile(delete=(not return_path), mode='w+', encoding='8859') as out_file, \
+            NamedTemporaryFile(mode='w+', encoding='8859') as err_file:
         try:
             t = dbg_time(f'Starting {cmd_args} in {cwd or "current directory"}',
                          level=log.VERBOSE_VERY)
