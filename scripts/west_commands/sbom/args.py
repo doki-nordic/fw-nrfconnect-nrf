@@ -45,6 +45,7 @@ git-info
 class ArgsClass:
     ''' Lists all command line arguments for better type hinting. '''
     _initialized: bool = False
+    _processed: bool = False
     # arguments added by west
     help: 'bool|None'
     zephyr_base: 'str|None'
@@ -66,6 +67,8 @@ class ArgsClass:
     ar: 'str|None'
     ninja: 'str|None'
     help_detectors: bool
+    debug_build_input_cache: 'str|None'
+    debug_skip_sources_deps: bool
 
 
 def split_arg_list(text: str) -> 'list[str]':
@@ -116,7 +119,7 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'detector')
     parser.add_argument('--allowed-in-map-file-only',
                         default='libgcc.a,'
-                                'libc_nano.a,libc++_nano.a,libm_nano.a,'
+                                'libc_nano.a,libc++_nano.a,libm_nano.a,libstdc++_nano.a,'
                                 'libc.a,libc++.a,libm.a',
                         help='Comma separated list of file names which can be detected in a map '
                              'file, but not visible in the build system. Usually, automatically '
@@ -137,6 +140,9 @@ def add_arguments(parser: argparse.ArgumentParser):
                              'By default, it will be automatically detected.')
     parser.add_argument('--help-detectors', action='store_true',
                         help='Show help for each available detector and exit.')
+    # Hidden arguments (for debug purposes only)
+    parser.add_argument('--debug-build-input-cache', default=None, help=argparse.SUPPRESS)
+    parser.add_argument('--debug-skip-sources-deps', action='store_true', help=argparse.SUPPRESS)
 
 
 def copy_arguments(source):
@@ -156,6 +162,10 @@ def init_args(allowed_detectors: dict):
                                          allow_abbrev=False)
         add_arguments(parser)
         copy_arguments(parser.parse_args())
+
+    if args._processed:
+        return
+    args._processed = True
 
     if args.help_detectors:
         print(DETECTORS_HELP)
