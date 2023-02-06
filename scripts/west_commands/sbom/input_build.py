@@ -398,6 +398,8 @@ class InputBuild:
             log.dbg(f'Map file {map_file} for target "{target}"')
             targets.append(target)
             maps.append(map_file)
+            self.data.inputs.append(f'The "{target}" file from the build directory '
+                                    f'"{self.build_dir.resolve()}"')
 
         # Detect external tools
         ext_detector = ExternalToolDetector()

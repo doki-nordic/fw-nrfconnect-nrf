@@ -700,6 +700,7 @@ This section provides detailed lists of changes by :ref:`script <scripts>`.
 * :ref:`west_sbom`:
 
   * Updated so that the output contains source repository and version information for each file.
+  * The script now supports Matter because it can enter GN external projects and get the source files from it.
 
 MCUboot
 =======

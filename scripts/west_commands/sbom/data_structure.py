@@ -10,7 +10,6 @@ the west ncs-sbom command.
 
 import copy
 from pathlib import Path
-from types import SimpleNamespace
 from uuid import uuid4
 
 
@@ -21,8 +20,6 @@ class DataBaseClass:
             if name.startswith('_'):
                 continue
             setattr(self, name, copy.copy(getattr(self, name)))
-    def __str__(self) -> str:
-        return str(SimpleNamespace(**self.__dict__))
 
 
 class FileInfo(DataBaseClass):
