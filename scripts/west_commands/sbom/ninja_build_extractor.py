@@ -12,6 +12,7 @@ import time
 from enum import Enum
 from pathlib import Path
 from threading import Lock
+from west import log
 from args import args
 from data_structure import DataBaseClass
 from common import SbomException, command_execute, concurrent_pool_iter
@@ -58,6 +59,7 @@ class NinjaBuildExtractor:
     '''
 
     build_dir: Path
+    include_order_only: bool
     deps: 'dict[set[str]]'
 
     archives: 'list[BuildArchive]'
@@ -70,7 +72,7 @@ class NinjaBuildExtractor:
     archives: 'list[BuildArchive]'
 
 
-    def __init__(self, build_dir: Path):
+    def __init__(self, build_dir: Path, include_order_only=False):
         '''
         Initialize build directory input object that will fill "data" object and get
         information from "build_dir".
@@ -79,6 +81,7 @@ class NinjaBuildExtractor:
         self.cache = dict()
         self.file_type_cache = dict()
         self.build_dir = Path(build_dir)
+        self.include_order_only = include_order_only
         self.lock = Lock()
         self.target_details = dict()
         self.root = BuildArchive()
@@ -232,10 +235,12 @@ class NinjaBuildExtractor:
         if done is None:
             done = set()
         if inputs_tuple is None:
-            explicit, implicit, _, _ = self.query_inputs(target)
+            explicit, implicit, order_only, _ = self.query_inputs(target)
         else:
-            explicit, implicit, _, _ = inputs_tuple
+            explicit, implicit, order_only, _ = inputs_tuple
         inputs = explicit.union(implicit)
+        if self.include_order_only:
+            inputs = inputs.union(order_only)
         result = set()
         if target in self.deps:
             result.update(self.deps[target])
@@ -254,9 +259,7 @@ class NinjaBuildExtractor:
                 sub_inputs_tuple = self.query_inputs(input)
                 phony = sub_inputs_tuple[3]
                 if not phony:
-                    self.cache[target] = set()
-                    raise SbomException(f'The input "{input}" does not exist or '
-                                        f'it is invalid build target.')
+                    log.wrn(f'The input "{input}" does not exist or it is invalid build target.')
                 sub_result = self.query_inputs_recursive(input, done, sub_inputs_tuple)
                 result.update(sub_result)
         self.cache[target] = result
@@ -359,8 +362,10 @@ class NinjaBuildExtractor:
         '''
         def process_target_execute(exec_args):
             self.lock.acquire()
-            self.process_target(*exec_args)
-            self.lock.release()
+            try:
+                self.process_target(*exec_args)
+            finally:
+                self.lock.release()
 
         self.process_target_queue = list()
         self.lock.acquire()

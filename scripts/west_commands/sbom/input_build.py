@@ -231,11 +231,13 @@ class InputBuild:
         return items
 
 
-    def mark_map_archive(self, map_item: MapFileItem, archive: BuildArchive):
+    def mark_map_archive(self, map_item: MapFileItem, archive: BuildArchive, visited: set = None):
         '''
         Mark entries in "map_item.content" that are in the "archive".
         '''
         file_names: 'set[str]' = set()
+        if visited is None:
+            visited = set()
         for source in archive.sources.values():
             file_names.add(source.name.lower())
         for obj in archive.objects.values():
@@ -246,8 +248,10 @@ class InputBuild:
             entry_name = Path(archive_entry).name.lower()
             if entry_name in file_names:
                 map_item.content[archive_entry] = True
-        for sub in archive.archives:
-            self.mark_map_archive(map_item, sub)
+        for sub in archive.archives.values():
+            if sub not in visited:
+                visited.add(sub)
+                self.mark_map_archive(map_item, sub, visited)
 
 
     @staticmethod
@@ -310,16 +314,20 @@ class InputBuild:
                             archive.is_leaf = True
 
 
-    def all_deps_of_archive(self, archive: BuildArchive) -> 'set[Path]':
+    def all_deps_of_archive(self, archive: BuildArchive, visited: set = None) -> 'set[Path]':
         '''
         Recursively scans the archive and returns a list of all dependencies.
         '''
+        if visited is None:
+            visited = set()
         all_deps: 'set[Path]' = set(archive.sources.values())
         for obj in archive.objects.values():
             all_deps.add(obj.path)
             all_deps.update(obj.sources.values())
         for sub in archive.archives.values():
-            all_deps.update(self.all_deps_of_archive(sub))
+            if sub not in visited:
+                visited.add(sub)
+                all_deps.update(self.all_deps_of_archive(sub, visited))
         return all_deps
 
 
@@ -374,6 +382,36 @@ class InputBuild:
             self.add_file_info(obj.path)
 
 
+    def merge_inputs(self, inputs: 'list[BuildArchive]'):
+        '''
+        Merges all archives from "inputs" parameter that are referring the same file.
+        '''
+        archives = {}
+        for input in inputs:
+            for archive_target in list(input.archives.keys()):
+                archive = input.archives[archive_target]
+                if archive.path in archives:
+                    dst = archives[archive.path]
+                    archive.merged_with = dst
+                    dst.archives.update(archive.archives)
+                    dst.objects.update(archive.objects)
+                    dst.sources.update(archive.sources)
+                    del input.archives[archive_target]
+                else:
+                    archives[archive.path] = archive
+        def update_dict(archive: BuildArchive, visited: set):
+            for key in list(archive.archives.keys()):
+                sub = archive.archives[key]
+                if hasattr(sub, 'merged_with'):
+                    archive.archives[key] = sub.merged_with
+                if sub not in visited:
+                    visited.add(sub)
+                    update_dict(sub, visited)
+        visited = set()
+        for input in inputs:
+            update_dict(input, visited)
+
+
     def generate(self, targets_with_maps: 'list[str]'):
         '''
         Generate a list of files from specified targets. Targets can optionally have a map
@@ -424,12 +462,14 @@ class InputBuild:
             inputs.append(root_extractor.extract(targets))
             for directory in ext_detector.gn_build_directories:
                 log.dbg(f'Extracting files from GN build directory "{directory}"')
-                gn_extractor = NinjaBuildExtractor(directory)
+                gn_extractor = NinjaBuildExtractor(directory, True)
                 inputs.append(gn_extractor.extract([DEFAULT_GN_TARGET]))
             # Save list of files to a cache file (debug purposes only)
             if args.debug_build_input_cache is not None:
                 with open(args.debug_build_input_cache, 'wb') as f:
                     pickle.dump(inputs, f)
+
+        self.merge_inputs(inputs)
 
         # Do additional validation
         self.validate_with_ar(inputs)
