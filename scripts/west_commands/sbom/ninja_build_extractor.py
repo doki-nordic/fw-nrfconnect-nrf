@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2023 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
@@ -15,7 +15,10 @@ from threading import Lock
 from west import log
 from args import args
 from data_structure import DataBaseClass
-from common import SbomException, command_execute, concurrent_pool_iter
+from common import SbomException, command_execute, concurrent_pool_iter, get_executor_workers
+
+
+COMMAND_LINE_MAX_SIZE = 7000 # Size of command line parameters in Windows is limited.
 
 
 class BuildObject(DataBaseClass):
@@ -65,6 +68,7 @@ class NinjaBuildExtractor:
     archives: 'list[BuildArchive]'
     process_target_queue: 'list[tuple[str, BuildObject, BuildArchive]]'
     cache: 'dict[str, set[str]]'
+    query_cache: 'dict[str, tuple[set[str], set[str], set[str], bool]]'
     file_type_cache: 'dict[str, FileType]'
     lock: Lock
     target_details: 'dict[str, tuple[Path, FileType]]'
@@ -79,6 +83,7 @@ class NinjaBuildExtractor:
         '''
         self.process_target_queue = list()
         self.cache = dict()
+        self.query_cache = dict()
         self.file_type_cache = dict()
         self.build_dir = Path(build_dir)
         self.include_order_only = include_order_only
@@ -152,6 +157,27 @@ class NinjaBuildExtractor:
                                         f'"{deps_file_name}" on line {line_no}!')
 
 
+    def prefetch_query_inputs(self, targets: 'list[str]'):
+        '''
+        Execute "ninja -t query <targets...>" and cache multiple targets to speed up
+        future queries. Querying for multiple targets at once is much faster than one at a time.
+        '''
+        query_args = [args.ninja, '-t', 'query']
+        query_len = len(' '.join(query_args))
+        for i in range(len(targets)): # pylint: disable=consider-using-enumerate
+            query_args.append(targets[i])
+            query_len += len(targets[i]) + 1
+            if (i == len(targets) - 1) or (query_len >= COMMAND_LINE_MAX_SIZE):
+                self.lock.release()
+                try:
+                    lines = command_execute(*query_args, cwd=self.build_dir)
+                finally:
+                    self.lock.acquire()
+                self.parse_query_output(lines)
+                query_args = [args.ninja, '-t', 'query']
+                query_len = len(' '.join(query_args))
+
+
     def query_inputs(self, target: str) -> 'tuple[set[str], set[str], set[str], bool]':
         '''
         Parse output of "ninja -t query <target>" command to find out all input targets.
@@ -161,26 +187,33 @@ class NinjaBuildExtractor:
             - set of "order only" inputs
             - bool set to True if provided target is a "phony" target
         '''
-        if args.debug_skip_sources_deps:
-            if (target.endswith('.h') or target.endswith('.hh') or target.endswith('.hpp')
-                or target.endswith('.c') or target.endswith('.cc') or target.endswith('.cpp')
-                or target.endswith('.c++')):
-                return (set(), set(), set(), False)
+        if target in self.query_cache:
+            return self.query_cache[target]
         self.lock.release()
-        lines = command_execute(args.ninja, '-t', 'query', target, cwd=self.build_dir)
-        self.lock.acquire()
-        ex_begin = f'Cannot parse output of "{args.ninja} -t query target" on line'
+        try:
+            lines = command_execute(args.ninja, '-t', 'query', target, cwd=self.build_dir)
+        finally:
+            self.lock.acquire()
+        self.parse_query_output(lines)
+        if target not in self.query_cache:
+            raise SbomException(f'Invalid output of "{args.ninja} -t query"')
+        return self.query_cache[target]
+
+
+    def parse_query_output(self, lines: 'list[str]'):
+        ex_begin = f'Cannot parse output of "{args.ninja} -t query" on line'
         lines = lines.split('\n')
         lines = tuple(filter(lambda line: len(line.strip()) > 0, lines))
         line_no = 0
-        explicit = set()
-        implicit = set()
-        order_only = set()
-        phony = False
         while line_no < len(lines):
-            m = re.fullmatch(r'\S.*:', lines[line_no])
+            m = re.fullmatch(r'(\S.*)\s*:', lines[line_no])
             if m is None:
                 raise SbomException(f'{ex_begin} {line_no + 1}. Expecting target.')
+            target = m.group(1)
+            explicit = set()
+            implicit = set()
+            order_only = set()
+            phony = False
             line_no += 1
             while line_no < len(lines):
                 m = re.fullmatch(r'(\s*)(.*):(.*)', lines[line_no])
@@ -206,15 +239,15 @@ class NinjaBuildExtractor:
                     if len(m.group(1)) <= ind1:
                         break
                     line_no += 1
-                    target = str(m.group(3))
+                    input_target = str(m.group(3))
                     if inputs:
                         if m.group(2) == '':
-                            explicit.add(target)
+                            explicit.add(input_target)
                         elif m.group(2) == '|':
-                            implicit.add(target)
+                            implicit.add(input_target)
                         else:
-                            order_only.add(target)
-        return (explicit, implicit, order_only, phony)
+                            order_only.add(input_target)
+            self.query_cache[target] = (explicit, implicit, order_only, phony)
 
 
     def query_inputs_recursive(self, target: str, done: 'set|None' = None,
@@ -355,34 +388,56 @@ class NinjaBuildExtractor:
                 del archive.objects['']
 
 
+    def prefetch_targets(self, targets: 'list[str]'):
+        '''
+        Calls "prefetch_query_inputs" function on provided list of targets using multiple
+        threads.
+        '''
+        def prefetch_chunk(exec_args):
+            with self.lock:
+                self.prefetch_query_inputs(exec_args)
+        executor_workers = get_executor_workers()
+        targets = list(filter(lambda target: target not in self.query_cache, set(targets)))
+        if len(targets) <= 4 * executor_workers:
+            self.prefetch_query_inputs(targets)
+        else:
+            chunk_size = (len(targets) + executor_workers - 1) // executor_workers
+            chunks = [targets[i:i + chunk_size] for i in range(0, len(targets), chunk_size)]
+            self.lock.release()
+            try:
+                for _ in concurrent_pool_iter(prefetch_chunk, chunks):
+                    pass
+            finally:
+                self.lock.acquire()
+
+
     def extract(self, targets: 'list[str]') -> BuildArchive:
         '''
         Returns a build archive that contains all the input files extracted from
         the specified targets. The returned value is in a BuildArchive object.
         '''
         def process_target_execute(exec_args):
-            self.lock.acquire()
-            try:
+            with self.lock:
                 self.process_target(*exec_args)
-            finally:
-                self.lock.release()
 
-        self.process_target_queue = list()
-        self.lock.acquire()
-        self.archives = dict()
-        for target in targets:
-            inputs = self.query_inputs_recursive(target)
-            for input in inputs:
-                self.process_target_delayed(input, self.root.objects[''], None)
-        while len(self.process_target_queue) > 0:
-            queue = self.process_target_queue
+        with self.lock:
             self.process_target_queue = list()
-            self.lock.release()
-            for _ in concurrent_pool_iter(process_target_execute, queue):
-                pass
-            self.lock.acquire()
-        self.lock.release()
-        self.remove_dummy_objects(self.archives)
-        self.root.archives.update(self.archives)
+            self.archives = dict()
+            for target in targets:
+                inputs = self.query_inputs_recursive(target)
+                for input in inputs:
+                    self.process_target_delayed(input, self.root.objects[''], None)
+            while len(self.process_target_queue) > 0:
+                queue = self.process_target_queue
+                self.process_target_queue = list()
+                self.prefetch_targets(list(map(lambda item: item[0], queue)))
+                self.lock.release()
+                try:
+                    for _ in concurrent_pool_iter(process_target_execute, queue):
+                        pass
+                finally:
+                    self.lock.acquire()
+            self.remove_dummy_objects(self.archives)
+            self.root.archives.update(self.archives)
 
         return self.root

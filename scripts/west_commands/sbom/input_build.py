@@ -382,7 +382,8 @@ class InputBuild:
             self.add_file_info(obj.path)
 
 
-    def merge_inputs(self, inputs: 'list[BuildArchive]'):
+    @staticmethod
+    def merge_inputs(inputs: 'list[BuildArchive]'):
         '''
         Merges all archives from "inputs" parameter that are referring the same file.
         '''

@@ -68,7 +68,6 @@ class ArgsClass:
     ninja: 'str|None'
     help_detectors: bool
     debug_build_input_cache: 'str|None'
-    debug_skip_sources_deps: bool
 
 
 def split_arg_list(text: str) -> 'list[str]':
@@ -142,7 +141,6 @@ def add_arguments(parser: argparse.ArgumentParser):
                         help='Show help for each available detector and exit.')
     # Hidden arguments (for debug purposes only)
     parser.add_argument('--debug-build-input-cache', default=None, help=argparse.SUPPRESS)
-    parser.add_argument('--debug-skip-sources-deps', action='store_true', help=argparse.SUPPRESS)
 
 
 def copy_arguments(source):

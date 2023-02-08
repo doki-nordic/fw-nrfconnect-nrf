@@ -74,7 +74,14 @@ def command_execute(*cmd_args: 'tuple[str|Path]', cwd: 'str|Path|None' = None,
 
 process_executor = None
 thread_executor = None
-executor_workers = None
+
+def get_executor_workers():
+    ''' Returns number of worker executors used in "concurrent_pool_iter". '''
+    from args import args
+    executor_workers = args.processes if args.processes > 0 else os.cpu_count()
+    if executor_workers is None or executor_workers < 1:
+        executor_workers = 1
+    return executor_workers
 
 
 def concurrent_pool_iter(func: Callable, iterable: Iterable, use_process: bool=False,
@@ -91,14 +98,10 @@ def concurrent_pool_iter(func: Callable, iterable: Iterable, use_process: bool=F
     @returns            Iterator over tuples containing: return value of func, input element, index
                         of that element (starting from 0)
     '''
-    from args import args
-    global process_executor, thread_executor, executor_workers
+    global process_executor, thread_executor
     collected = iterable if isinstance(iterable, tuple) else tuple(iterable)
     if len(collected) >= threshold:
-        if executor_workers is None:
-            executor_workers = args.processes if args.processes > 0 else os.cpu_count()
-            if executor_workers is None or executor_workers < 1:
-                executor_workers = 1
+        executor_workers = get_executor_workers()
         if use_process:
             if process_executor is None:
                 process_executor = concurrent.futures.ProcessPoolExecutor(executor_workers)
