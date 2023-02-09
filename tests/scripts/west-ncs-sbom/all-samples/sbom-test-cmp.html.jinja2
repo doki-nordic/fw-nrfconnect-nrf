@@ -1,0 +1,72 @@
+<html>
+
+<head>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+        table td {
+            margin: 0px;
+            padding: 6px;
+            border: 1px solid silver;
+        }
+        a {
+            text-decoration: none;
+            color: green;
+        }
+        .build-error a {
+            color: #004472;
+        }
+        .test1-error a {
+            color: orange;
+        }
+        .test2-error a, .test2-miss a {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        <tr>
+            <td>Build</td>
+            <td>Test-1</td>
+            <td>Test-2</td>
+            <td>Name</td>
+            <td>Location</td>
+            <td>Board</td>
+        {% for test_path in state -%}
+        {% set test = state[test_path] %}
+        <tr>
+            {% if test.unknown %}
+            <td colspan="3" class="unknown-{{ test.unknown.type |e}}"><a href="javascript://" onclick="expand_me(this)" data-msg="{{ test.unknown.message |e}}">{{ test.unknown.type |e}}</a></td>
+            {% else %}
+            <td class="build-{{ test.build.type |e}} test1-{{ test.test1.type |e}} test2-{{ test.test2.type |e}}"><a href="javascript://" onclick="expand_me(this)" data-msg="{{ test.build.message |e}}">{{ test.build.type |e}}</a></td>
+            <td class="build-{{ test.build.type |e}} test1-{{ test.test1.type |e}} test2-{{ test.test2.type |e}}"><a href="javascript://" onclick="expand_me(this)" data-msg="{{ test.test1.message |e}}">{{ test.test1.type |e}}</a></td>
+            <td class="build-{{ test.build.type |e}} test1-{{ test.test1.type |e}} test2-{{ test.test2.type |e}}"><a href="javascript://" onclick="expand_me(this)" data-msg="{{ test.test2.message |e}}">{{ test.test2.type |e}}</a></td>
+            {% endif %}
+            <td>{{ test.name |e}}</td>
+            <td>{{ test.reldir |e}}</td>
+            <td>{{ test.platform |e}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <textarea id="info" style="position: absolute; width: 80vw; height: 80vh; display: none;"></textarea>
+    <script>
+        let shown = false;
+        function expand_me(link) {
+            let text = document.getElementById('info');
+            if (shown) {
+                text.style.display = 'none';
+            } else {
+                text.style.display = '';
+                let data = link.getAttribute('data-msg');
+                text.value = data;
+                link.appendChild(text);
+            }
+            shown = !shown;
+        }
+    </script>
+</body>
+
+</html>

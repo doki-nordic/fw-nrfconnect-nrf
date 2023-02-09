@@ -1,0 +1,38 @@
+<html>
+
+<head>
+    <style>
+        .ok {
+            color: green;
+        }
+
+        .unknown .exception {
+            color: red;
+            font-weight: bold;
+            background-color: yellow
+        }
+
+        .failed {
+            color: red;
+        }
+
+        .build {
+            color: orange;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        {% for test_path in state -%}
+        {% set test = state[test_path] %}
+        <tr>
+            <td class="{{ test.result |e}}">{{ test.result |e}}</td>
+            <td>{{ test.reldir |e}}</td>
+            <td>{{ test.name |e}}</td>
+            <td>{{ test.platform |e}}</td>
+        </tr>
+        {% endfor %}
+</body>
+
+</html>
