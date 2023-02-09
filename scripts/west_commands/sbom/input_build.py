@@ -23,6 +23,7 @@ from ninja_build_extractor import BuildArchive, NinjaBuildExtractor, BuildObject
 DEFAULT_BUILD_DIR = 'build'
 DEFAULT_TARGET = 'zephyr/zephyr.elf'
 DEFAULT_GN_TARGET = 'default'
+SOURCE_CODE_SUFFIXES = ['.c', '.cpp', '.cxx', '.cc', '.c++', '.s']
 
 
 class MapFileItem(DataBaseClass):
@@ -303,10 +304,14 @@ class InputBuild:
                     content_extacted = False
                     break
             extracted = content_extacted or map_item.extracted
-            if ((not extracted) and (map_item.path.name not in args.allowed_in_map_file_only)
-                and not map_item.optional):
-                raise SbomException(f'Input "{map_item.path}", extracted from a map file, '
-                                    'is not detected in a build system.')
+            if (not extracted) and (not map_item.optional):
+                if map_item.path.name in args.allowed_in_map_file_only:
+                    input = BuildArchive()
+                    input.sources[str(map_item.path.name)] = map_item.path
+                    inputs.append(input)
+                else:
+                    raise SbomException(f'Input "{map_item.path}", extracted from a map file, '
+                                        'is not detected in a build system.')
             if map_item.extracted and (not content_extacted) and (len(map_item.content) > 0):
                 for input in inputs:
                     for archive in input.archives.values():
@@ -363,11 +368,13 @@ class InputBuild:
     def add_file_info(self, path: Path):
         '''
         Add output file information using given path.
+        If file is empty and it is not a source code, ignore it.
         '''
-        file = FileInfo()
-        file.file_path = path
-        file.file_rel_path = Path(os.path.relpath(path, util.west_topdir()))
-        self.data.files.append(file)
+        if (path.stat().st_size > 0) or (path.suffix.lower() in SOURCE_CODE_SUFFIXES):
+            file = FileInfo()
+            file.file_path = path
+            file.file_rel_path = Path(os.path.relpath(path, util.west_topdir()))
+            self.data.files.append(file)
 
 
     def add_object_info(self, obj: BuildObject):
@@ -375,10 +382,11 @@ class InputBuild:
         Add output object file information using from "obj". If the object file has
         the sources, they will be added instead of the object file.
         '''
-        if len(obj.sources) > 0:
-            for source in obj.sources.values():
-                self.add_file_info(source)
-        else:
+        any_source = False
+        for source in obj.sources.values():
+            self.add_file_info(source)
+            any_source = any_source or (source.suffix.lower() in SOURCE_CODE_SUFFIXES)
+        if not any_source:
             self.add_file_info(obj.path)
 
 
@@ -486,6 +494,10 @@ class InputBuild:
                         self.add_file_info(source)
                     for obj in archive.objects.values():
                         self.add_object_info(obj)
+            for source in input.sources.values():
+                self.add_file_info(source)
+            for obj in input.objects.values():
+                self.add_object_info(obj)
 
 
 def generate_input(data: Data):

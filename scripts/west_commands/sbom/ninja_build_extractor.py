@@ -438,6 +438,7 @@ class NinjaBuildExtractor:
                 finally:
                     self.lock.acquire()
             self.remove_dummy_objects(self.archives)
+            self.remove_dummy_objects({ '': self.root })
             self.root.archives.update(self.archives)
 
         return self.root
