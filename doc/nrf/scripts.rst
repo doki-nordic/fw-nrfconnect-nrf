@@ -18,3 +18,4 @@ Here you can find documentation for these scripts.
    ../../scripts/partition_manager/*
    ../../scripts/west_commands/sbom/*
    ../../scripts/memfault/*
+   ../../scripts/wireshark/*
