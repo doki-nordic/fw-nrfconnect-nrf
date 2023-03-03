@@ -58,6 +58,14 @@ EXTCAP_CONFIG = dedent('''
     value {arg=1}{value=FINE}{display=FINE}{default=false}
     ''').strip()
 
+#TODO: Automatic list of Nordic devices:
+# echo expdevlist /tmp/j-link-dev-list.csv > a.jlink
+# echo exit >> a.jlink
+# JLinkExe -CommandFile a.jlink
+# Load j-link-dev-list.csv and filter and put into Device config
+# If JLinkExe cannot be found automatially, show text box as it is now,
+# but text box and select box should have different ids (or param?) to avoid problems
+# during conf saving and loading by Wireshark.
 
 #endregion
 
