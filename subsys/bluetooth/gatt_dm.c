@@ -12,6 +12,8 @@
 
 LOG_MODULE_REGISTER(bt_gatt_dm, CONFIG_BT_GATT_DM_LOG_LEVEL);
 
+#define UUID_STR_LEN 37
+
 /* Available sizes: 128, 512, 2048... */
 #define CHUNK_DATA_SIZE (128 - sizeof(struct k_mem_block_id) \
 		- sizeof(struct data_chunk_item *))
@@ -433,11 +435,116 @@ static uint8_t discovery_process_characteristic(
 	return BT_GATT_ITER_CONTINUE;
 }
 
+struct service_mem {
+	struct bt_gatt_service_val service;
+	uint16_t handle;
+	union
+	{
+		struct bt_uuid uuid;
+		struct bt_uuid_16 uuid_16;
+		struct bt_uuid_32 uuid_32;
+		struct bt_uuid_128 uuid_128;
+	};
+};
+
+struct service_mem services[32];
+int service_count = 0;
+int service_index = 0;
+
 static uint8_t discovery_callback(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
 			       struct bt_gatt_discover_params *params)
 {
-	if (!attr) {
+	char str[UUID_STR_LEN];
+
+	struct bt_gatt_dm* dm = &bt_gatt_dm_inst;
+
+	/*if (attr) {
+		bt_uuid_to_str(attr->uuid, str, sizeof(str));
+		printk("                     cbk: handle=%d, uuid=%s, data=%s\n", attr->handle, str, attr->user_data ? "yes" : "no");
+	} else {
+		printk("                     cbk: NULL\n");
+	}*/
+
+	switch (params->type) {
+
+	case BT_GATT_DISCOVER_PRIMARY:
+	case BT_GATT_DISCOVER_SECONDARY: {
+		if (attr == NULL) {
+			printk("Services END\n");
+			service_index = 0;
+			dm->discover_params.start_handle = services[service_index].handle + 1;
+			dm->discover_params.end_handle = services[service_index].service.end_handle;
+			dm->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+			bt_uuid_to_str(&services[service_index].uuid, str, sizeof(str));
+			printk("Discover: characteristic %d÷%d for service %s\n", dm->discover_params.start_handle, dm->discover_params.end_handle, str);
+			int err = bt_gatt_discover(dm->conn, &(dm->discover_params));
+			if (err) {
+				LOG_ERR("Discover failed, error: %d.", err);
+				atomic_clear_bit(dm->state_flags, STATE_ATTRS_LOCKED);
+			}
+			return BT_GATT_ITER_STOP;
+		}
+		struct bt_gatt_service_val *service = attr->user_data;
+		bt_uuid_to_str(service->uuid, str, sizeof(str));
+		printk("Service uuid=%s, handle=%d, end_handle=%d\n", str, attr->handle, service->end_handle);
+		services[service_count].service = *service;
+		services[service_count].handle = attr->handle;
+		services[service_count].service.uuid = &services[service_count].uuid;
+		memcpy(&services[service_count].uuid, service->uuid, get_uuid_size(service->uuid));
+		service_count++;
+		/*
+		dm->discover_params.start_handle = dm->discover_params.start_handle + 1;
+		dm->discover_params.end_handle = service->end_handle;
+		dm->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+		printk("                     discover: characteristic %d÷%d\n", dm->discover_params.start_handle, dm->discover_params.end_handle);
+		int err = bt_gatt_discover(dm->conn, &(dm->discover_params));
+		if (err) {
+			LOG_ERR("Discover failed, error: %d.", err);
+			atomic_clear_bit(dm->state_flags, STATE_ATTRS_LOCKED);
+			return BT_GATT_ITER_STOP;
+		}
+		//discovery_complete(&bt_gatt_dm_inst);
+		return BT_GATT_ITER_STOP;*/
+		return BT_GATT_ITER_CONTINUE;
+	}
+	case BT_GATT_DISCOVER_CHARACTERISTIC: {
+		if (attr == NULL) {
+			printk("Characteristics END\n");
+			service_index++;
+			if (service_index < service_count) {
+				dm->discover_params.start_handle = services[service_index].handle + 1;
+				dm->discover_params.end_handle = services[service_index].service.end_handle;
+				dm->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+				bt_uuid_to_str(&services[service_index].uuid, str, sizeof(str));
+				printk("Discover: characteristic %d÷%d for service %s\n", dm->discover_params.start_handle, dm->discover_params.end_handle, str);
+				int err = bt_gatt_discover(dm->conn, &(dm->discover_params));
+				if (err) {
+					LOG_ERR("Discover failed, error: %d.", err);
+					atomic_clear_bit(dm->state_flags, STATE_ATTRS_LOCKED);
+				}
+			}
+			return BT_GATT_ITER_STOP;
+		}
+		struct bt_gatt_chrc *chrc = attr->user_data;
+		bt_uuid_to_str(chrc->uuid, str, sizeof(str));
+		printk("Characteristic uuid=%s, handle=%d, value_handle=%d, prop=0x%X\n", str, attr->handle, chrc->value_handle, chrc->properties);
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/*case BT_GATT_DISCOVER_ATTRIBUTE:
+		return discovery_process_attribute(&bt_gatt_dm_inst,
+						   attr, params);
+	default:
+		/ * This should not be possible * /
+		__ASSERT(false, "Unknown param type.");
+		discovery_complete_error(&bt_gatt_dm_inst, -EINVAL);
+
+		break;*/
+	}
+
+	return BT_GATT_ITER_STOP;
+	/*if (!attr) {
 		LOG_DBG("NULL attribute");
 	} else {
 		LOG_DBG("Attr: handle %u", attr->handle);
@@ -462,14 +569,14 @@ static uint8_t discovery_callback(struct bt_conn *conn,
 							attr,
 							params);
 	default:
-		/* This should not be possible */
+		/ * This should not be possible * /
 		__ASSERT(false, "Unknown param type.");
 		discovery_complete_error(&bt_gatt_dm_inst, -EINVAL);
 
 		break;
 	}
 
-	return BT_GATT_ITER_STOP;
+	return BT_GATT_ITER_STOP;*/
 }
 
 struct bt_gatt_service_val *bt_gatt_dm_attr_service_val(
@@ -646,6 +753,7 @@ int bt_gatt_dm_start(struct bt_conn *conn,
 	dm->discover_params.end_handle = 0xffff;
 	dm->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 
+	printk("Discover: primary %d÷%d\n", dm->discover_params.start_handle, dm->discover_params.end_handle);
 	err = bt_gatt_discover(conn, &dm->discover_params);
 	if (err) {
 		LOG_ERR("Discover failed, error: %d.", err);
@@ -689,6 +797,7 @@ int bt_gatt_dm_continue(struct bt_gatt_dm *dm, void *context)
 	dm->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	dm->discover_params.uuid = dm->search_svc_by_uuid ? &dm->svc_uuid.uuid : NULL;
 
+	printk("                     discover: primary %d÷%d\n", dm->discover_params.start_handle, dm->discover_params.end_handle);
 	err = bt_gatt_discover(dm->conn, &dm->discover_params);
 	if (err) {
 		LOG_ERR("Discover failed, error: %d.", err);
