@@ -182,8 +182,11 @@ struct radio_rx_stats {
 		size_t len;
 	} last_packet;
 
-	/** Number of received packets with valid CRC. */
+	/** Number of received packets. */
 	uint32_t packet_cnt;
+
+	/** Number of received packets with valid content. */
+	uint32_t valid_packet_cnt;
 };
 
 /**

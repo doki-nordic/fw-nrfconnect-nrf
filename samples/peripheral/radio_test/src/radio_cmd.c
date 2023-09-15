@@ -1075,7 +1075,10 @@ static int cmd_print_payload(const struct shell *shell, size_t argc,
 	shell_print(shell, "Received payload:");
 	shell_hexdump(shell, rx_stats.last_packet.buf,
 		      rx_stats.last_packet.len);
-	shell_print(shell, "Number of packets: %d", rx_stats.packet_cnt);
+	shell_print(shell, "Number of received packets: %d", rx_stats.packet_cnt);
+	shell_print(shell, "Number of valid packets: %d (%d%%)", rx_stats.valid_packet_cnt,
+		    (rx_stats.packet_cnt > 0 ?
+		     rx_stats.valid_packet_cnt * 100 / rx_stats.packet_cnt : 0));
 
 	return 0;
 }

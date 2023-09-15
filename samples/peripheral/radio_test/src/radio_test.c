@@ -52,8 +52,10 @@ static uint8_t tx_packet[RADIO_MAX_PAYLOAD_LEN];
 static uint8_t rx_packet[RADIO_MAX_PAYLOAD_LEN];
 /* Number of transmitted packets. */
 static uint32_t tx_packet_cnt;
-/* Number of received packets with valid CRC. */
+/* Number of received packets. */
 static uint32_t rx_packet_cnt;
+/* Number of received packets with valid content. */
+static uint32_t rx_packet_valid_cnt;
 
 /* Radio current channel (frequency). */
 static uint8_t current_channel;
@@ -353,11 +355,9 @@ static void radio_config(nrf_radio_mode_t mode, enum transmit_pattern pattern)
 	nrf_radio_packet_configure(NRF_RADIO, &packet_conf);
 }
 
-static void generate_modulated_rf_packet(uint8_t mode,
-					 enum transmit_pattern pattern)
+static void generate_packet(uint8_t mode, enum transmit_pattern pattern)
 {
-	radio_config(mode, pattern);
-
+	uint32_t rand_state = 0x31415927;
 	/* One byte used for size, actual size is SIZE-1 */
 #if CONFIG_HAS_HW_NRF_RADIO_IEEE802154
 	if (mode == NRF_RADIO_MODE_IEEE802154_250KBIT) {
@@ -371,7 +371,10 @@ static void generate_modulated_rf_packet(uint8_t mode,
 
 	switch (pattern) {
 	case TRANSMIT_PATTERN_RANDOM:
-		sys_rand_get(tx_packet + 1, sizeof(tx_packet) - 1);
+		for (int i = 1; i < sizeof(tx_packet); i++) {
+			rand_state = rand_state * 1664525 + 1013904223;
+			tx_packet[i] = rand_state >> 24;
+		}
 		break;
 	case TRANSMIT_PATTERN_11001100:
 		memset(tx_packet + 1, 0xCC, sizeof(tx_packet) - 1);
@@ -383,7 +386,13 @@ static void generate_modulated_rf_packet(uint8_t mode,
 		/* Do nothing. */
 		break;
 	}
+}
 
+static void generate_modulated_rf_packet(uint8_t mode,
+					 enum transmit_pattern pattern)
+{
+	radio_config(mode, pattern);
+	generate_packet(mode, pattern);
 	nrf_radio_packetptr_set(NRF_RADIO, tx_packet);
 }
 
@@ -520,8 +529,10 @@ static void radio_rx(uint8_t mode, uint8_t channel, enum transmit_pattern patter
 
 	radio_config(mode, pattern);
 	radio_channel_set(mode, channel);
+	generate_packet(mode, pattern);
 
 	rx_packet_cnt = 0;
+	rx_packet_valid_cnt = 0;
 
 	nrf_radio_int_enable(NRF_RADIO, NRF_RADIO_INT_CRCOK_MASK);
 
@@ -706,6 +717,7 @@ void radio_rx_stats_get(struct radio_rx_stats *rx_stats)
 	rx_stats->last_packet.buf = rx_packet;
 	rx_stats->last_packet.len = size;
 	rx_stats->packet_cnt = rx_packet_cnt;
+	rx_stats->valid_packet_cnt = rx_packet_valid_cnt;
 }
 
 #if NRF_POWER_HAS_DCDCEN_VDDH || NRF_POWER_HAS_DCDCEN
@@ -794,6 +806,9 @@ void radio_handler(const void *context)
 	if (nrf_radio_event_check(NRF_RADIO, NRF_RADIO_EVENT_CRCOK)) {
 		nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_CRCOK);
 		rx_packet_cnt++;
+		if (memcmp(rx_packet, tx_packet, sizeof(rx_packet)) == 0) {
+			rx_packet_valid_cnt++;
+		}
 	}
 
 	if (nrf_radio_event_check(NRF_RADIO, NRF_RADIO_EVENT_END)) {
