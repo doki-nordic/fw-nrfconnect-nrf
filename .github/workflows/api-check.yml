@@ -1,4 +1,4 @@
-name: Documentation Build
+name: API Check
 
 on:
   pull_request:
@@ -13,4 +13,4 @@ jobs:
       - name: API check
         working-directory: ncs/nrf
         run: |
-          cat text.txt
+          cat test.txt
