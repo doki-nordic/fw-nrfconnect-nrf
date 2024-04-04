@@ -11,10 +11,10 @@ properties:
   sensor_descr:
     description: description of sensor which data is aggregated
     required: true
-    type: string
+    type: int
 
   buf_data_length:
-    description: buffer length in bytes, range 1-255.
+    description: buffer length in bytes, range 1-127.
     type: int
     default: 120
 
