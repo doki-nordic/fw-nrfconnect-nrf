@@ -1,3 +1,5 @@
 ::notice file=include/caf/gpio_pins.h,line=17,title=API Notice::notice: Structure "gpio_pin" field "wakeup_not_blocked" added.
 ::error file=include/bluetooth/adv_prov.h,line=28,title=API Critical::critical: Structure "bt_le_adv_prov_adv_state" field "new_adv_session" deleted.
 ::warning file=include/bluetooth/adv_prov.h,line=37,title=API Warning::warning: Structure "bt_le_adv_prov_adv_state" field "in_grace_period" type changed.
+::error file=nrf/dts/bindings/caf/caf%2Caggregator.yaml,line=14,title=DTS Binding Critical::critical: Property "sensor_descr" type changed in "caf,aggregator".
+::notice file=nrf/dts/bindings/caf/caf%2Caggregator.yaml,line=17,title=DTS Binding Notice::notice: Property "buf_data_length" description changed in "caf,aggregator".
