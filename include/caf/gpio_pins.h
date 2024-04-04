@@ -14,6 +14,7 @@ struct gpio_pin {
 	uint8_t port;
 	uint8_t pin;
 	bool wakeup_blocked;
+	bool wakeup_not_blocked;
 };
 
 #endif /* _GPIO_PINS_H_ */
