@@ -1,0 +1,16 @@
+name: Documentation Build
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: nordicbuilder/action-checkout-west-update@main
+
+      - name: API check
+        working-directory: ncs/nrf
+        run: |
+          cat text.txt
