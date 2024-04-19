@@ -10,6 +10,16 @@
 #include <kernel_structs.h>
 #include <init.h>
 
+/*
+TODO: Use SysTick as clock source.
+- Read directly from SYST_CVR: https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-timer--systick
+- Send SYST_RVR value at startup (and maybe periodically)
+- On host side, use SysTick interrupt to tell when the counter was reloaded. Be careful, because interrupt may be delayed sometimes,
+  so for safety use formula: time_hi = max(time_hi, time_hi_from_previous_interrupt + period)
+- Warning on host side if the interrupts tracking is disabled and we are using SysTick
+- Optionally, allow user to implement the time function (don't use Nordic HW timers)
+*/
+
 /* Definitions used internally in this header file. */
 #define _RTT_LITE_TRACE_EV_MARK_START 0x19000000
 #define _RTT_LITE_TRACE_EV_MARK 0x1A000000
