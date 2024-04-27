@@ -1,0 +1,83 @@
+name: API Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      new_commit:
+        type: string
+        required: true
+        description: New Commit
+      old_commit:
+        type: string
+        required: true
+        description: Old Commit
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - name: Checkout sources
+        uses: nordicbuilder/action-checkout-west-update@main
+        with:
+          git-fetch-depth: 0
+          git-ref: ${{ github.event.inputs.new_commit }}
+
+      - name: cache-pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-doc-pip
+
+      - name: Git rebase
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        working-directory: ncs/nrf
+        run: |
+          git remote -v
+          git branch
+          git rebase origin/${BASE_REF}
+          # debug
+          git log --pretty=oneline -n 5
+
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt-get install -y ninja-build mscgen plantuml
+          sudo snap install yq
+          DOXYGEN_VERSION=$(yq ".doxygen.version" ./ncs/nrf/scripts/tools-versions-linux.yml)
+          wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
+          tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
+          echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Install Python dependencies
+        working-directory: ncs
+        run: |
+          sudo pip3 install -U setuptools wheel pip
+          pip3 install -r nrf/doc/requirements.txt
+
+      - name: West zephyr-export
+        working-directory: ncs
+        run: |
+          west zephyr-export
+
+      - name: Collect data from new commit
+        working-directory: ncs/nrf
+        run: |
+          git log -n 1
+
+      - name: Checkout old commit
+        working-directory: ncs/nrf
+        run: |
+          git checkout ${{ github.event.inputs.old_commit }}${{ github.base_ref }}
+
+      - name: Collect data from old commit
+        working-directory: ncs/nrf
+        run: |
+          git log -n 1
