@@ -114,3 +114,12 @@ jobs:
           python3 ../../api_check/dts --format github --relative-to . --save-stats ../../dts-stats.json -n ../../dts-new.pkl -o ../../dts-old.pkl
           cat ../../headers-stats.json
           cat ../../dts-stats.json
+
+      - name: Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          path: ncs/nrf/*.pkl
+          if-no-files-found: ignore
+          retention-days: 1
+          compression-level: 9
