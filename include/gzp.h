@@ -587,7 +587,7 @@ enum gzp_id_req_res gzp_id_req_send(void);
  * @param callback is the callback function.
  * @param context is a pointer to be passed to the callback function.
  */
-void gzp_id_req_send_async(gzp_id_req_callback callback, void *context);
+void gzp_id_req_send_async(gzp_id_req_callback callback);
 
 /**
  * Function for sending encrypted user data to the Host.
