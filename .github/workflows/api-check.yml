@@ -61,6 +61,7 @@ jobs:
         run: |
           sudo pip3 install -U setuptools wheel pip
           pip3 install -r nrf/doc/requirements.txt
+          pip3 install -r nrf/scripts/ci/api_check/requirements.txt
 
       - name: West zephyr-export
         working-directory: ncs
@@ -70,14 +71,34 @@ jobs:
       - name: Collect data from new commit
         working-directory: ncs/nrf
         run: |
+          source ../zephyr/zephyr-env.sh
+          cp -r scripts/ci/api_check ../..
+          echo =========== NEW COMMIT ===========
           git log -n 1
+          cmake -GNinja -Bdoc/_build -Sdoc
+          python3 ../../api_check/utils/interrupt_on.py "syncing doxygen output" ninja -C doc/_build nrf
+          python3 ../../api_check/headers doc/_build/nrf/doxygen/xml --save-input ../../headers-new.pkl
+          python3 ../../api_check/dts -n - --save-input ../../dts-new.pkl
+          rm -Rf doc/_build
 
-      - name: Checkout old commit
+      - name: Checkout old commit and west update
         working-directory: ncs/nrf
         run: |
           git checkout ${{ github.event.inputs.old_commit }}${{ github.base_ref }}
+          west update
 
       - name: Collect data from old commit
         working-directory: ncs/nrf
         run: |
+          source ../zephyr/zephyr-env.sh
+          cp -r scripts/ci/api_check ../..
+          echo =========== OLD COMMIT ===========
           git log -n 1
+          cmake -GNinja -Bdoc/_build -Sdoc
+          python3 ../../api_check/utils/interrupt_on.py "syncing doxygen output" ninja -C doc/_build nrf
+          python3 ../../api_check/headers doc/_build/nrf/doxygen/xml --save-input ../../headers-old.pkl
+          python3 ../../api_check/dts -n - --save-input ../../dts-old.pkl
+
+      - name: Check
+        run: |
+          ls -la ../..
