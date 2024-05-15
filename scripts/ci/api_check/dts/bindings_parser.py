@@ -1,6 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
-import pickle
 import sys
+import pickle
 from pathlib import Path
 from utils import devicetree_sources, warning
 

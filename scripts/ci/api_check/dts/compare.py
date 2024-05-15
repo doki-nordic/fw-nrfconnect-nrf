@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 from typing import Any
 from bindings_parser import Binding, Property, ParseResult

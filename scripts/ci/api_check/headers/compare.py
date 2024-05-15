@@ -1,3 +1,6 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 
 from typing import Any
 from nodes import Enum, EnumValue, File, Function, FunctionLike, Group, Node, Param, Struct, StructField, Typedef, Variable, Define
