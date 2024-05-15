@@ -67,7 +67,6 @@ def main():
 
     message = get_message(stats)
     print(f'Comment message:\n{message}\n------------------------------------')
-    exit()
 
     github = Github(os.environ['GITHUB_TOKEN'])
     print(f'Github API connected. Remaining requests {github.rate_limiting[0]} of {github.rate_limiting[1]}.')
