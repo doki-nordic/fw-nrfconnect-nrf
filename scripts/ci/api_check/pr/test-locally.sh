@@ -5,6 +5,7 @@ set -e
 GITHUB_ACTOR=...user...
 GITHUB_REPO=...user_or_organization/repo_name...
 PR_NUMBER=...number...
+GITHUB_RUN_ID=...number...
 
 rm -Rf /tmp/test-pr-api-check
 mkdir -p /tmp/test-pr-api-check
@@ -21,5 +22,6 @@ export GITHUB_TOKEN
 export GITHUB_ACTOR
 export GITHUB_REPO
 export PR_NUMBER
+export GITHUB_RUN_ID
 
 python3 $SCRIPT_DIR /tmp/test-pr-api-check/headers.stats.json /tmp/test-pr-api-check/dts.stats.json
