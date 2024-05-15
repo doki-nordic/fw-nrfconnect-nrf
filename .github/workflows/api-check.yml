@@ -26,7 +26,6 @@ jobs:
         uses: nordicbuilder/action-checkout-west-update@main
         with:
           git-fetch-depth: 0
-          git-ref: ${{ github.event.inputs.new_commit }}
 
       - name: cache-pip
         uses: actions/cache@v3
@@ -55,24 +54,31 @@ jobs:
           wget --no-verbose "https://github.com/doxygen/doxygen/releases/download/Release_${DOXYGEN_VERSION//./_}/doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz"
           tar xf doxygen-${DOXYGEN_VERSION}.linux.bin.tar.gz
           echo "${PWD}/doxygen-${DOXYGEN_VERSION}/bin" >> $GITHUB_PATH
+          cp -r ncs/nrf/scripts/ci/api_check .
 
       - name: Install Python dependencies
         working-directory: ncs
         run: |
           sudo pip3 install -U setuptools wheel pip
           pip3 install -r nrf/doc/requirements.txt
-          pip3 install -r nrf/scripts/ci/api_check/requirements.txt
+          pip3 install -r ../api_check/requirements.txt
 
       - name: West zephyr-export
         working-directory: ncs
         run: |
           west zephyr-export
 
+      - name: Checkout new commit and west update
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: ncs/nrf
+        run: |
+          git checkout ${{ github.event.inputs.new_commit }}
+          west update
+
       - name: Collect data from new commit
         working-directory: ncs/nrf
         run: |
           source ../zephyr/zephyr-env.sh
-          cp -r scripts/ci/api_check ../..
           echo =========== NEW COMMIT ===========
           git log -n 1
           cmake -GNinja -Bdoc/_build -Sdoc
@@ -91,7 +97,6 @@ jobs:
         working-directory: ncs/nrf
         run: |
           source ../zephyr/zephyr-env.sh
-          cp -r scripts/ci/api_check ../..
           echo =========== OLD COMMIT ===========
           git log -n 1
           cmake -GNinja -Bdoc/_build -Sdoc
