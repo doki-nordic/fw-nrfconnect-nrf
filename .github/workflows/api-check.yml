@@ -116,11 +116,13 @@ jobs:
           echo DTS stats
           cat ../../dts-stats.json || true
 
-      - name: Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          path: ./*.pkl
-          if-no-files-found: ignore
-          retention-days: 1
-          compression-level: 9
+      - name: Update PR
+        if: github.event_name == 'pull_request'
+        working-directory: ncs/nrf
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          python3 ../../api_check/pr ../../headers-stats.json ../../dts-stats.json
