@@ -53,7 +53,7 @@ def get_stats() -> TemplateData:
     return stats
 
 def get_message(data: TemplateData) -> str:
-    template_path: Path = Path(__file__).parent / 'template.md.jinja'
+    template_path: Path = Path(__file__).parent / 'pr-comment.md.jinja'
     template = Template(template_path.read_text())
     message = API_CHECK_COMMENT_INDICATOR + '\n' + template.render(**data.__dict__).strip()
     return message
