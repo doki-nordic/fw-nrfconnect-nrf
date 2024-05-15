@@ -111,6 +111,6 @@ jobs:
         run: |
           ls -la ../..
           python3 ../../api_check/headers --format github --resolve-paths .. --relative-to . --save-stats ../../headers-stats.json ../../headers-new.pkl ../../headers-old.pkl
-          python3 ../../api_check/dts --format github --relative-to . --save-stats ../../dts-stats.json ../../dts-new.pkl ../../dts-old.pkl
+          python3 ../../api_check/dts --format github --relative-to . --save-stats ../../dts-stats.json -n ../../dts-new.pkl -o ../../dts-old.pkl
           cat ../../headers-stats.json
           cat ../../dts-stats.json
