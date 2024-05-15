@@ -26,6 +26,7 @@ jobs:
         uses: nordicbuilder/action-checkout-west-update@main
         with:
           git-fetch-depth: 0
+          west-update-args: ''
 
       - name: cache-pip
         uses: actions/cache@v3
@@ -91,6 +92,7 @@ jobs:
         working-directory: ncs/nrf
         run: |
           git checkout ${{ github.event.inputs.old_commit }}${{ github.base_ref }}
+          cd ..
           west update
 
       - name: Collect data from old commit
