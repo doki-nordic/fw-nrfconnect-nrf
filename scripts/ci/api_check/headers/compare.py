@@ -354,7 +354,7 @@ def compare(new: ParseResult, old: ParseResult) -> CompareResult:
     for change in changes:
         node: Node = change.new
         group: 'Group | None' = None
-        for parent_id in node.parent_ids:
+        for parent_id in (node.parent_ids or []):
             parent = None
             if parent_id in new.nodes_by_id:
                 parent = new.nodes_by_id[parent_id]
