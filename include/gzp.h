@@ -375,7 +375,7 @@ void gzp_set_host_id(const uint8_t *src);
  *
  * @param dst Pointer to write the Host ID to.
  */
-void gzp_get_host_id(uint8_t *dst);
+void gzp_get_host_id(uint8_t *dst, int some);
 
 
 /**
@@ -587,7 +587,7 @@ enum gzp_id_req_res gzp_id_req_send(void);
  * @param callback is the callback function.
  * @param context is a pointer to be passed to the callback function.
  */
-void gzp_id_req_send_async(gzp_id_req_callback callback, void *context);
+void gzp_id_req_send_async(gzp_id_req_callback callback);
 
 /**
  * Function for sending encrypted user data to the Host.
