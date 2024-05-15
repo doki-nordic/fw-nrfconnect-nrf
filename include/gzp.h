@@ -375,7 +375,7 @@ void gzp_set_host_id(const uint8_t *src);
  *
  * @param dst Pointer to write the Host ID to.
  */
-void gzp_get_host_id(uint8_t *dst);
+void gzp_get_host_id(uint8_t *dst, int some);
 
 
 /**
