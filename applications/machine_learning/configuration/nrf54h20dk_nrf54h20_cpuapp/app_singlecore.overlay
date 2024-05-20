@@ -6,12 +6,44 @@
 
 #include "app.overlay"
 
-/ {
-	sensor_sim: sensor-sim {
-		compatible = "nordic,sensor-sim";
-		acc-signal = "wave";
+
+&spi120 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio1 5 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi120_default_alt>;
+	pinctrl-1 = <&spi120_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	adxl362: spi-dev-adxl362@0 {
+		compatible = "adi,adxl362";
+		spi-max-frequency = <8000000>;
+		reg = <0>;
+		int1-gpios = <&gpio1 11 0>;
+	};
+};
+
+&pinctrl {
+	spi120_default_alt: spi120_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 8)>,
+				<NRF_PSEL(SPIM_MISO, 1, 9)>;
+		};
 	};
 
+	spi120_sleep_alt: spi120_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 4)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 8)>,
+				<NRF_PSEL(SPIM_MISO, 1, 9)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
 };
 
 // /delete-node/ &cpuapp_rx_partitions;
