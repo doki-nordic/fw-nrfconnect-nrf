@@ -44,7 +44,7 @@ tests:
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
     tags: ci_build
-    extra_args: FILE_SUFFIX="singlecore"
+    extra_args: SHIELD=pca63566 FILE_SUFFIX="singlecore"
   applications.machine_learning.sensor_hub.zdebug:
     build_only: true
     sysbuild: true

@@ -24,11 +24,6 @@
 		};
 	};
 
-	sensor_sim: sensor-sim {
-		compatible = "nordic,sensor-sim";
-		acc-signal = "wave";
-	};
-
 	/* Redefine leds to fit CAF requirements. */
 	/delete-node/ leds;
 

@@ -85,3 +85,7 @@
 		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
+
+&gpio1 {
+	status = "okay";
+};
