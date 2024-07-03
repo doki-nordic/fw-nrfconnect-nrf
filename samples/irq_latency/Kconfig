@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2020 Nordic Semiconductor
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+source "Kconfig.zephyr"
+
+menu "IRQ Latency sample"
+
+config IRQ_LATENCY_APP_LOG_LEVEL
+	int "Log level for the IRQ Latency sample"
+	default 4
+
+endmenu

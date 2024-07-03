@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/ {
+	gpiosout {
+		compatible = "gpio-leds";
+		trigger_pin: trigger-pin {
+			gpios = <&gpio0 0 0>;
+			label = "IRQ Latency trigger pin";
+		};
+		response0_pin: response0-pin {
+			gpios = <&gpio0 4 0>;
+			label = "IRQ Latency response0 pin";
+		};
+		response1_pin: response1-pin {
+			gpios = <&gpio0 5 0>;
+			label = "IRQ Latency response1 pin";
+		};
+		response2_pin: response2-pin {
+			gpios = <&gpio0 6 0>;
+			label = "IRQ Latency response2 pin";
+		};
+		response3_pin: response3-pin {
+			gpios = <&gpio0 7 0>;
+			label = "IRQ Latency response3 pin";
+		};
+	};
+
+	gpiosin {
+		compatible = "gpio-keys";
+		input_pin: input-pin {
+			gpios = <&gpio0 1 0>;
+			label = "IRQ Latency input pin";
+		};
+	};
+};
