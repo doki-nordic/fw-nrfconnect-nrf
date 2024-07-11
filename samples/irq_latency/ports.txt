@@ -1,0 +1,45 @@
+
+
+P0
+	0 - OUT one-time trigger
+	1 - IN gpio test
+	4 - OUT interrupt enter/leave
+	5 - OUT nested interrupt enter/leave
+	6 - OUT system idle enter/leave
+	7 - OUT callback enter/leave
+	8 BUTTON1
+	9 BUTTON2
+	10 BUTTON3
+	11 BUTTON4
+
+P1
+	0 - OUT pwm trigger
+	4 - UART test TX
+	5 - UART test RX
+	7 CTS J-link
+	9 RTS J-link
+	10 RX J-link
+	11 TX J-link
+P2
+	4 RX J-link
+	5 CTS J-link
+	6 TX J-link
+	7 RST J-link
+
+P6
+	0 exmif
+	3 exmif
+	5 exmif
+	7 exmif
+
+P9
+	0 LED - thread/work running
+	1 LED
+	2 LED
+	3 LED
+	4 CAN
+	5 CAN
+
+uart134 - test
+uart135 USED J-link
+uart136 USED J-link
