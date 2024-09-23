@@ -1,12 +1,13 @@
 
 # Users
 
-## doki-nordic (doki) <img src="https://github.com/doki-nordic.png?size=100" style="float:right">
+## doki-nordic (doki)
 
+<img src="https://github.com/doki-nordic.png?size=160" align="right" style="width: 160px">
 Groups:
 
 * [Software Integration Muffin Team (si-muffin)](#software-integration-muffin-team-si-muffin)
-* [Software bill of materials scripts (sbom)](#software-bill-of-materials-scripts-sbom)
+* [Software bill of materials scripts (sbom)](#software-bill-of-materials-scripts-sbom) - **main contact point**
 
 Links:
 * [Teams Chat](https://teams.microsoft.com/l/chat/0/0?users=doki@nordicsemi.no)
@@ -18,8 +19,9 @@ Responsibilities:
 * /subsys/bluetooth/
 * /include/caf/
 
-## grochu (migr) <img src="https://github.com/grochu.png?size=100" style="float:right; width: 100px">
+## grochu (migr)
 
+<img src="https://github.com/grochu.png?size=160" align="right" style="width: 160px">
 Groups:
 
 * [Software Integration Muffin Team (si-muffin)](#software-integration-muffin-team-si-muffin) - **Leader**
@@ -57,7 +59,7 @@ Responsibilities:
 ## Software bill of materials scripts (sbom)
 
 Members:
-* [doki-nordic (doki)](#doki-nordic-doki)
+* [doki-nordic (doki)](#doki-nordic-doki) - **main contact point**
 * [maje-emb (maje)](#maje-emb-maje)
 
 Links:
