@@ -60,16 +60,16 @@
 #define HIDS_QUEUE_SIZE 10
 
 /* Key used to move cursor left */
-#define KEY_LEFT_MASK   DK_BTN1_MSK
+#define KEY_LEFT_MASK   DK_BTN4_MSK
 /* Key used to move cursor up */
 #define KEY_UP_MASK     DK_BTN2_MSK
 /* Key used to move cursor right */
 #define KEY_RIGHT_MASK  DK_BTN3_MSK
 /* Key used to move cursor down */
-#define KEY_DOWN_MASK   DK_BTN4_MSK
+#define KEY_DOWN_MASK   DK_BTN1_MSK
 
 /* Key used to accept or reject passkey value */
-#define KEY_PAIRING_ACCEPT DK_BTN1_MSK
+#define KEY_PAIRING_ACCEPT DK_BTN4_MSK
 #define KEY_PAIRING_REJECT DK_BTN2_MSK
 
 /* HIDS instance. */

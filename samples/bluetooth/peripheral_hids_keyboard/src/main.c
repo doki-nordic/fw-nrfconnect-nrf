@@ -57,7 +57,7 @@
 #define KEY_ADV_MASK   DK_BTN4_MSK
 
 /* Key used to accept or reject passkey value */
-#define KEY_PAIRING_ACCEPT DK_BTN1_MSK
+#define KEY_PAIRING_ACCEPT DK_BTN3_MSK
 #define KEY_PAIRING_REJECT DK_BTN2_MSK
 
 /* HIDs queue elements. */
