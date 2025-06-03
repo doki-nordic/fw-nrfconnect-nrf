@@ -137,6 +137,7 @@ static int enqueue_sample(struct aggregator *agg, struct sensor_event *event)
 		return -EBADMSG;
 	}
 	if (!agg->active_buf) {
+		LOG_ERR("No active buffer");
 		return -ENOMEM;
 	}
 
@@ -145,6 +146,8 @@ static int enqueue_sample(struct aggregator *agg, struct sensor_event *event)
 	size_t avail_bytes = agg->buf_len - pos_values * sizeof(struct sensor_value);
 
 	if (avail_bytes < chunk_bytes) {
+		LOG_ERR("No space left in the buffer: %s, %zu bytes available, %zu bytes needed",
+			agg->sensor_descr, avail_bytes, chunk_bytes);
 		__ASSERT_NO_MSG(false);
 		return -ENOMEM;
 	}
