@@ -767,8 +767,12 @@ union dtm_tr_packet dtm_tr_get(void)
 	int64_t msb_time = 0;
 	int err;
 
+	ENTER_FUNC();
+
 	for (;;) {
+		MY_LOG("Waiting for UART command");
 		dtm_uart_wait();
+		MY_LOG("Done waiting for UART command");
 
 		err = uart_poll_in(dtm_uart, &rx_byte);
 		if (err) {
@@ -808,6 +812,7 @@ union dtm_tr_packet dtm_tr_get(void)
 			dtm_cmd |= rx_byte;
 			LOG_INF("Received 0x%04x command", dtm_cmd);
 			tmp.twowire = dtm_cmd;
+			EXIT_FUNC();
 			return tmp;
 		}
 	}

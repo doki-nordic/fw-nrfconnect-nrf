@@ -53,16 +53,26 @@ static const nrfx_timer_t wait_timer = NRFX_TIMER_INSTANCE(WAIT_TIMER_INSTANCE);
 /* Semaphore for synchronizing UART poll cycle wait time.*/
 static K_SEM_DEFINE(wait_sem, 0, 1);
 
+static atomic_t sem_mirror = 0;
+
 static void wait_timer_handler(nrf_timer_event_t event_type, void *context)
 {
+	ENTER_FUNC();
 	nrfx_timer_disable(&wait_timer);
 	nrfx_timer_clear(&wait_timer);
-
+	MY_LOG("Give sem");
+	int old = atomic_inc(&sem_mirror);
+	if (old != 0) {
+		MY_LOG("Unexpected sem token value before give");
+		_my_error_text = "Unexpected sem token value before give";
+	}
 	k_sem_give(&wait_sem);
+	EXIT_FUNC();
 }
 
 int dtm_uart_wait_init(void)
 {
+	ENTER_FUNC();
 	nrfx_err_t err;
 	nrfx_timer_config_t timer_cfg = {
 		.frequency = NRFX_MHZ_TO_HZ(1),
@@ -73,6 +83,7 @@ int dtm_uart_wait_init(void)
 	err = nrfx_timer_init(&wait_timer, &timer_cfg, wait_timer_handler);
 	if (err != NRFX_SUCCESS) {
 		LOG_ERR("nrfx_timer_init failed with: %d", err);
+		EXIT_FUNC();
 		return -EAGAIN;
 	}
 
@@ -84,6 +95,7 @@ int dtm_uart_wait_init(void)
 		nrfx_timer_us_to_ticks(&wait_timer, DTM_UART_POLL_CYCLE),
 		true);
 
+	EXIT_FUNC();
 	return 0;
 }
 
@@ -91,10 +103,29 @@ void dtm_uart_wait(void)
 {
 	int err;
 
+	ENTER_FUNC();
+
+	if (atomic_get(&sem_mirror) > 1) {
+		MY_LOG("Unexpected sem token value before take");
+		_my_error_text = "Unexpected sem token value before take";
+	}
+
 	nrfx_timer_enable(&wait_timer);
 
+	MY_LOG("Take sem");
+
 	err = k_sem_take(&wait_sem, K_FOREVER);
-	if (err) {
-		LOG_ERR("UART wait error: %d", err);
+	int old = atomic_dec(&sem_mirror);
+	if (old != 1) {
+		MY_LOG("Unexpected sem token value after take");
+		_my_error_text = "Unexpected sem token value after take";
 	}
+	if (err) {
+		MY_LOG("UART wait error: %d", err);
+	}
+
+	EXIT_FUNC();
 }
+
+atomic_t _my_log_counter;
+const char* volatile _my_error_text = NULL;

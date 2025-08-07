@@ -25,6 +25,28 @@ int dtm_uart_wait_init(void);
  */
 void dtm_uart_wait(void);
 
+extern const char* volatile _my_error_text;
+extern atomic_t _my_log_counter;
+
+#define MY_LOG(text, ...) do { \
+	int cnt = atomic_inc(&_my_log_counter); \
+	const char* _err_text = _my_error_text; \
+	if (_err_text) \
+		LOG_ERR("%d: " text " (ACTIVE ERROR: %s)", cnt, ##__VA_ARGS__, _err_text); \
+	else \
+		LOG_ERR("%d: " text, cnt, ##__VA_ARGS__); \
+} while (0)
+
+#define ENTER_FUNC() \
+	static atomic_t _enter_count; \
+	int _old_count = atomic_inc(&_enter_count); \
+	MY_LOG("ENTER %s: %d", __FUNCTION__, _old_count); \
+	if (_old_count > 0) { _my_error_text = "Multiple enters"; }
+
+#define EXIT_FUNC() \
+	int _old_dec_count = atomic_dec(&_enter_count); \
+	MY_LOG("EXIT  %s: %d (current: %d)", __FUNCTION__, _old_count, _old_dec_count - 1);
+
 #ifdef __cplusplus
 }
 #endif
