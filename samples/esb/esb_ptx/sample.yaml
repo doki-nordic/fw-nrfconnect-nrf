@@ -14,6 +14,11 @@ common:
 tests:
   sample.esb.ptx:
     sysbuild: true
+    extra_configs:
+      - CONFIG_ESB_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - LOG_PROCESS_TRIGGER_THRESHOLD=40
+      - LOG_BUFFER_SIZE=10240
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT
     integration_platforms:
       - nrf52dk/nrf52832
@@ -101,6 +106,10 @@ tests:
     extra_configs:
       - CONFIG_ESB_FAST_SWITCHING=y
       - CONFIG_ESB_FAST_CHANNEL_SWITCHING=y
+      - CONFIG_ESB_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - LOG_PROCESS_TRIGGER_THRESHOLD=40
+      - LOG_BUFFER_SIZE=10240
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpurad
     platform_allow:
