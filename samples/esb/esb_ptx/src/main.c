@@ -38,9 +38,16 @@ static struct esb_payload tx_payload = ESB_CREATE_PAYLOAD(0,
 	 RADIO_SHORTS_ADDRESS_RSSISTART_Msk |                                  \
 	 RADIO_SHORTS_DISABLED_RSSISTOP_Msk)
 
+int channel_index = 0;
+
+int channel_map[] = { 30, 25, 30, 20, };
+
 void event_handler(struct esb_evt const *event)
 {
 	ready = true;
+
+	esb_set_rf_channel(channel_map[channel_index % ARRAY_SIZE(channel_map)]);
+	channel_index++;
 
 	switch (event->evt_id) {
 	case ESB_EVENT_TX_SUCCESS:

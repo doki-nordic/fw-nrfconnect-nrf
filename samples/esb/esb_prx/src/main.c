@@ -212,6 +212,8 @@ int main(void)
 		return 0;
 	}
 
+	esb_set_rf_channel(30);
+
 	LOG_INF("Initialization complete");
 
 	err = esb_write_payload(&tx_payload);

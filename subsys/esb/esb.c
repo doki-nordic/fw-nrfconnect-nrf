@@ -32,6 +32,8 @@
 
 LOG_MODULE_REGISTER(esb, CONFIG_ESB_LOG_LEVEL);
 
+#define LOG_ERR(...) do { } while (0)
+
 /* Constants */
 
 /* 2 Mb RX wait for acknowledgment time-out value.
@@ -345,6 +347,8 @@ static void on_radio_disabled_rx(void);
 static void on_radio_disabled_rx_ack(void);
 static void on_radio_end_tx_noack(void);
 
+#define set_esb_state(state) do { esb_state = state; LOG_ERR("%d:%d: ESB state %d", __LINE__, NRF_RADIO->STATE, state); } while (0)
+
 /*  Function to do bytewise bit-swap on an unsigned 32-bit value */
 static uint32_t bytewise_bit_swap(const uint8_t *input)
 {
@@ -361,6 +365,34 @@ static uint32_t bytewise_bit_swap(const uint8_t *input)
 	return inp;
 #endif
 }
+
+const char* shorts[32];
+
+void shorts_dump(uint32_t mask, int l)
+{
+	static char str[384];
+	char* p = str;
+	for (int i = 0; i < 32; i++) {
+		if (mask & (1 << i)) {
+			strcpy(p, shorts[i] ? shorts[i] : "UNKNOWN____");
+			p += strlen(p) - 4;
+			*p++ = ' ';
+			*p = 0;
+		}
+	}
+	LOG_ERR("%d:%d: %08X %s", l, NRF_RADIO->STATE, mask, str);
+}
+
+#define nrf_radio_shorts_set(r, x) do { \
+	shorts_dump(x, __LINE__); \
+	nrf_radio_shorts_set(r, x); \
+} while (0)
+
+#define nrf_radio_task_trigger(r, x) do { \
+	const char* const xx = #x; \
+	LOG_ERR("%d:%d: %s", __LINE__, NRF_RADIO->STATE, &xx[10]); \
+	nrf_radio_task_trigger(r, x); \
+} while (0)
 
 /* Convert a base address from nRF24L format to nRF5 format */
 static uint32_t addr_conv(const uint8_t *addr)
@@ -864,6 +896,8 @@ static void update_radio_tx_power(void)
 	int32_t err;
 	mpsl_tx_power_split_t tx_power;
 
+	LOG_ERR("%s %d", __FUNCTION__, esb_addr.rf_channel);
+
 	(void)mpsl_fem_tx_power_split(esb_cfg.tx_output_power, &tx_power,
 				      (RADIO_BASE_FREQUENCY + esb_addr.rf_channel), false);
 
@@ -1144,6 +1178,8 @@ static void sys_timer_deinit(void)
 	nrfx_timer_uninit(&esb_timer);
 }
 
+static void fast_switching_set_channel(uint8_t channel);
+
 static void start_tx_transaction(void)
 {
 	bool ack = true;
@@ -1152,6 +1188,10 @@ static void start_tx_transaction(void)
 	last_tx_attempts = 1;
 	/* Prepare the payload */
 	current_payload = tx_fifo.payload[tx_fifo.front];
+
+	nrf_radio_shorts_set(NRF_RADIO, radio_shorts_common);
+
+	LOG_ERR("%d:%d: STATE r=%d esb=%d", __LINE__, NRF_RADIO->STATE, NRF_RADIO->STATE, esb_state);
 
 	switch (esb_cfg.protocol) {
 	case ESB_PROTOCOL_ESB:
@@ -1173,8 +1213,9 @@ static void start_tx_transaction(void)
 
 		/* Configure the retransmit counter */
 		retransmits_remaining = esb_cfg.retransmit_count;
+		LOG_ERR("%d:%d: on dis: tx", __LINE__, NRF_RADIO->STATE);
 		on_radio_disabled = on_radio_disabled_tx;
-		esb_state = ESB_STATE_PTX_TX_ACK;
+		set_esb_state(ESB_STATE_PTX_TX_ACK);
 		break;
 
 	case ESB_PROTOCOL_ESB_DPL:
@@ -1201,8 +1242,9 @@ static void start_tx_transaction(void)
 
 			/* Configure the retransmit counter */
 			retransmits_remaining = esb_cfg.retransmit_count;
+			LOG_ERR("%d:%d: on dis: tx", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled = on_radio_disabled_tx;
-			esb_state = ESB_STATE_PTX_TX_ACK;
+			set_esb_state(ESB_STATE_PTX_TX_ACK);
 			nrf_radio_int_enable(NRF_RADIO, NRF_RADIO_INT_DISABLED_MASK);
 		} else if (IS_ENABLED(CONFIG_ESB_NEVER_DISABLE_TX)) {
 			nrf_radio_shorts_set(NRF_RADIO, radio_shorts_common &
@@ -1220,16 +1262,18 @@ static void start_tx_transaction(void)
 			esb_ppi_for_wait_for_rx_set();
 
 			on_timer_compare1 = on_radio_end_tx_noack;
+			LOG_ERR("%d:%d: on dis: tx_noack", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled = NULL;
 			is_tx_idle = ((esb_state == ESB_STATE_PTX_TXIDLE) ||
 						(esb_state == ESB_STATE_PTX_TX));
-			esb_state = ESB_STATE_PTX_TX;
+			set_esb_state(ESB_STATE_PTX_TX);
 		} else {
 			nrf_radio_shorts_set(NRF_RADIO, radio_shorts_common |
 					     ESB_SHORT_DISABLE_MASK);
 
+			LOG_ERR("%d:%d: on dis: tx_noack", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled = on_radio_disabled_tx_noack;
-			esb_state = ESB_STATE_PTX_TX;
+			set_esb_state(ESB_STATE_PTX_TX);
 			nrf_radio_int_enable(NRF_RADIO, NRF_RADIO_INT_DISABLED_MASK);
 		}
 
@@ -1240,9 +1284,14 @@ static void start_tx_transaction(void)
 		break;
 	}
 
+	LOG_ERR("%s %d", __FUNCTION__, esb_addr.rf_channel);
 	nrf_radio_txaddress_set(NRF_RADIO, current_payload->pipe);
 	nrf_radio_rxaddresses_set(NRF_RADIO, BIT(current_payload->pipe));
+//#if defined(CONFIG_ESB_FAST_CHANNEL_SWITCHING)
+	//fast_switching_set_channel(esb_addr.rf_channel);
+//#else
 	nrf_radio_frequency_set(NRF_RADIO, (RADIO_BASE_FREQUENCY + esb_addr.rf_channel));
+//#endif /* defined(CONFIG_ESB_FAST_CHANNEL_SWITCHING) */
 	atomic_clear_bit(&esb_addr.rf_channel_flags, RF_CHANNEL_UPDATE_FLAG);
 
 	update_radio_tx_power();
@@ -1287,7 +1336,7 @@ static void on_radio_end_tx_noack(void)
 	tx_fifo_remove_last();
 
 	if (tx_fifo.count == 0) {
-		esb_state = ESB_STATE_PTX_TXIDLE;
+		set_esb_state(ESB_STATE_PTX_TXIDLE);
 		set_evt_interrupt();
 	} else {
 		set_evt_interrupt();
@@ -1304,7 +1353,7 @@ static void on_radio_disabled_tx_noack(void)
 	tx_fifo_remove_last();
 
 	if (tx_fifo.count == 0) {
-		esb_state = ESB_STATE_IDLE;
+		set_esb_state(ESB_STATE_IDLE);
 		errata216_off();
 		set_evt_interrupt();
 	} else {
@@ -1365,10 +1414,14 @@ static void on_radio_disabled_tx(void)
 
 	nrf_radio_packetptr_set(NRF_RADIO, rx_payload_buffer);
 	if (fast_switching) {
+		nrf_radio_int_disable(NRF_RADIO, ESB_RADIO_INT_END_MASK);
+		nrf_radio_event_clear(NRF_RADIO, ESB_RADIO_EVENT_END);
 		nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
+		nrf_radio_shorts_set(NRF_RADIO, (radio_shorts_common | ESB_SHORT_DISABLE_MASK));
 	}
+	LOG_ERR("%d:%d: on dis: tx_wait_for_ack", __LINE__, NRF_RADIO->STATE);
 	on_radio_disabled = on_radio_disabled_tx_wait_for_ack;
-	esb_state = ESB_STATE_PTX_RX_ACK;
+	set_esb_state(ESB_STATE_PTX_RX_ACK);
 }
 
 static void on_radio_disabled_tx_wait_for_ack(void)
@@ -1385,10 +1438,16 @@ static void on_radio_disabled_tx_wait_for_ack(void)
 	mpsl_fem_lna_configuration_clear();
 	mpsl_fem_disable();
 
+	LOG_ERR("retransmission %d", retransmits_remaining);
+
 	/* If the radio has received a packet and the CRC status is OK */
 	if (nrf_radio_event_check(NRF_RADIO, ESB_RADIO_EVENT_END) &&
 	    nrf_radio_crc_status_check(NRF_RADIO)) {
 		interrupt_flags |= INT_TX_SUCCESS_MSK;
+		LOG_ERR("INT_TX_SUCCESS_MSK!!!!!!!!!!!!!");
+		nrf_radio_int_disable(NRF_RADIO, ESB_RADIO_INT_END_MASK);
+		nrf_radio_event_clear(NRF_RADIO, ESB_RADIO_EVENT_END);
+		nrf_radio_shorts_set(NRF_RADIO, radio_shorts_common);
 		last_tx_attempts = esb_cfg.retransmit_count - retransmits_remaining + 1;
 
 		tx_fifo_remove_last();
@@ -1401,13 +1460,14 @@ static void on_radio_disabled_tx_wait_for_ack(void)
 		}
 
 		if ((tx_fifo.count == 0) || (esb_cfg.tx_mode == ESB_TXMODE_MANUAL)) {
-			esb_state = ESB_STATE_IDLE;
+			set_esb_state(ESB_STATE_IDLE);
 			errata216_off();
 			set_evt_interrupt();
 		} else {
 			set_evt_interrupt();
 			start_tx_transaction();
 		}
+
 	} else {
 		if (retransmits_remaining-- == 0) {
 #if NRF_TIMER_HAS_SHUTDOWN
@@ -1423,7 +1483,7 @@ static void on_radio_disabled_tx_wait_for_ack(void)
 			last_tx_attempts = esb_cfg.retransmit_count + 1;
 			interrupt_flags |= INT_TX_FAILED_MSK;
 
-			esb_state = ESB_STATE_IDLE;
+			set_esb_state(ESB_STATE_IDLE);
 			errata216_off();
 			set_evt_interrupt();
 		} else {
@@ -1437,6 +1497,7 @@ static void on_radio_disabled_tx_wait_for_ack(void)
 			 */
 			if (fast_switching) {
 				nrf_radio_shorts_set(NRF_RADIO, radio_shorts_common);
+				nrf_radio_int_enable(NRF_RADIO, ESB_RADIO_INT_END_MASK);
 			} else {
 				nrf_radio_shorts_set(NRF_RADIO,
 					(radio_shorts_common | NRF_RADIO_SHORT_DISABLED_RXEN_MASK));
@@ -1445,8 +1506,9 @@ static void on_radio_disabled_tx_wait_for_ack(void)
 
 			nrf_radio_packetptr_set(NRF_RADIO, tx_payload_buffer);
 
+			LOG_ERR("%d:%d: on dis: tx", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled = on_radio_disabled_tx;
-			esb_state = ESB_STATE_PTX_TX_ACK;
+			set_esb_state(ESB_STATE_PTX_TX_ACK);
 
 			update_radio_tx_power();
 
@@ -1613,7 +1675,7 @@ static void on_radio_disabled_rx(void)
 			break;
 		}
 
-		esb_state = ESB_STATE_PRX_SEND_ACK;
+		set_esb_state(ESB_STATE_PRX_SEND_ACK);
 
 		update_radio_tx_power();
 
@@ -1628,6 +1690,7 @@ static void on_radio_disabled_rx(void)
 				     (radio_shorts_common | NRF_RADIO_SHORT_DISABLED_RXEN_MASK));
 		}
 
+		LOG_ERR("%d:%d: on dis: rx_ack", __LINE__, NRF_RADIO->STATE);
 		on_radio_disabled = on_radio_disabled_rx_ack;
 	} else {
 		clear_events_restart_rx();
@@ -1659,12 +1722,13 @@ static void on_radio_disabled_rx_ack(void)
 		nrf_radio_shorts_set(NRF_RADIO, (radio_shorts_common |
 						 NRF_RADIO_SHORT_DISABLED_TXEN_MASK));
 	}
+	LOG_ERR("%d:%d: on dis: rx", __LINE__, NRF_RADIO->STATE);
 	on_radio_disabled = on_radio_disabled_rx;
 
-	esb_state = ESB_STATE_PRX;
+	set_esb_state(ESB_STATE_PRX);
 }
 
-static void fast_switchinng_set_channel(uint8_t channel)
+static void fast_switching_set_channel(uint8_t channel)
 {
 	*(volatile uint32_t *)((uint8_t *)(NRF_RADIO) +  0x70C) &= ~(1 << 31);
 	nrf_radio_frequency_set(NRF_RADIO, (RADIO_BASE_FREQUENCY + channel));
@@ -1696,6 +1760,7 @@ static void radio_irq_handler(void)
 		 * current protocol state.
 		 */
 		if (on_radio_disabled) {
+			LOG_ERR("%d:%d: on_dis()", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled();
 		}
 	}
@@ -1707,6 +1772,7 @@ static void radio_irq_handler(void)
 		 * This event is handled in the analogous way to the disable event.
 		 */
 		if (on_radio_disabled) {
+			LOG_ERR("%d:%d: on_end()", __LINE__, NRF_RADIO->STATE);
 			on_radio_disabled();
 		}
 		nrf_radio_event_clear(NRF_RADIO, ESB_RADIO_EVENT_END);
@@ -1717,7 +1783,8 @@ static void radio_irq_handler(void)
 	    nrf_radio_event_check(NRF_RADIO, NRF_RADIO_EVENT_RXREADY)) {
 		nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_RXREADY);
 		if (atomic_test_and_clear_bit(&esb_addr.rf_channel_flags, RF_CHANNEL_UPDATE_FLAG)) {
-			fast_switchinng_set_channel(esb_addr.rf_channel);
+			LOG_ERR("%s %d", __FUNCTION__, esb_addr.rf_channel);
+			fast_switching_set_channel(esb_addr.rf_channel);
 		}
 	}
 #endif /* defined(CONFIG_ESB_FAST_CHANNEL_SWITCHING) */
@@ -1813,9 +1880,31 @@ static void esb_irq_disable(void)
 	irq_disable(ESB_TIMER_IRQ);
 }
 
+#define SHORT_NAME(name) shorts[name] = &(#name)[13];
+
 int esb_init(const struct esb_config *config)
 {
 	int err;
+
+	SHORT_NAME(RADIO_SHORTS_READY_START_Pos);
+    //SHORT_NAME(RADIO_SHORTS_END_DISABLE_Pos);
+    SHORT_NAME(RADIO_SHORTS_DISABLED_TXEN_Pos);
+    SHORT_NAME(RADIO_SHORTS_DISABLED_RXEN_Pos);
+    SHORT_NAME(RADIO_SHORTS_ADDRESS_RSSISTART_Pos);
+    SHORT_NAME(RADIO_SHORTS_END_START_Pos);
+    SHORT_NAME(RADIO_SHORTS_ADDRESS_BCSTART_Pos);
+    //SHORT_NAME(RADIO_SHORTS_DISABLED_RSSISTOP_Pos);
+    SHORT_NAME(RADIO_SHORTS_RXREADY_CCASTART_Pos);
+    SHORT_NAME(RADIO_SHORTS_CCAIDLE_TXEN_Pos);
+    SHORT_NAME(RADIO_SHORTS_CCABUSY_DISABLE_Pos);
+    SHORT_NAME(RADIO_SHORTS_FRAMESTART_BCSTART_Pos);
+    SHORT_NAME(RADIO_SHORTS_READY_EDSTART_Pos);
+    SHORT_NAME(RADIO_SHORTS_EDEND_DISABLE_Pos);
+    SHORT_NAME(RADIO_SHORTS_CCAIDLE_STOP_Pos);
+    SHORT_NAME(RADIO_SHORTS_TXREADY_START_Pos);
+    SHORT_NAME(RADIO_SHORTS_RXREADY_START_Pos);
+    SHORT_NAME(RADIO_SHORTS_PHYEND_DISABLE_Pos);
+    SHORT_NAME(RADIO_SHORTS_PHYEND_START_Pos);
 
 	if (!config) {
 		return -EINVAL;
@@ -1907,7 +1996,7 @@ int esb_init(const struct esb_config *config)
 	}
 	irq_enable(ESB_TIMER_IRQ);
 
-	esb_state = ESB_STATE_IDLE;
+	set_esb_state(ESB_STATE_IDLE);
 	esb_initialized = true;
 
 	if (nrf52_errata_182()) {
@@ -1986,7 +2075,7 @@ int esb_suspend(void)
 	/*  Clear PPI */
 	esb_ppi_disable_all();
 
-	esb_state = ESB_STATE_IDLE;
+	set_esb_state(ESB_STATE_IDLE);
 	errata216_off();
 
 	return 0;
@@ -2003,7 +2092,7 @@ void esb_disable(void)
 	/* Radio ramp-up time to default mode */
 	nrf_radio_fast_ramp_up_enable_set(NRF_RADIO, false);
 
-	esb_state = ESB_STATE_IDLE;
+	set_esb_state(ESB_STATE_IDLE);
 	errata216_off();
 	esb_initialized = false;
 
@@ -2163,7 +2252,9 @@ int esb_start_rx(void)
 
 	nrf_radio_int_disable(NRF_RADIO, 0xFFFFFFFF);
 	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
+	nrf_radio_event_clear(NRF_RADIO, ESB_RADIO_EVENT_END);
 
+	LOG_ERR("%d:%d: on dis: rx", __LINE__, NRF_RADIO->STATE);
 	on_radio_disabled = on_radio_disabled_rx;
 
 	if (fast_switching) {
@@ -2176,8 +2267,9 @@ int esb_start_rx(void)
 
 	nrf_radio_int_enable(NRF_RADIO, NRF_RADIO_INT_DISABLED_MASK);
 
-	esb_state = ESB_STATE_PRX;
+	set_esb_state(ESB_STATE_PRX);
 
+	LOG_ERR("%s %d", __FUNCTION__, esb_addr.rf_channel);
 	nrf_radio_rxaddresses_set(NRF_RADIO, esb_addr.rx_pipes_enabled);
 	nrf_radio_frequency_set(NRF_RADIO, (RADIO_BASE_FREQUENCY + esb_addr.rf_channel));
 	atomic_clear_bit(&esb_addr.rf_channel_flags, RF_CHANNEL_UPDATE_FLAG);
@@ -2209,7 +2301,9 @@ int esb_stop_rx(void)
 
 	nrf_radio_shorts_disable(NRF_RADIO, 0xFFFFFFFF);
 	nrf_radio_int_disable(NRF_RADIO, 0xFFFFFFFF);
+	nrf_radio_event_clear(NRF_RADIO, ESB_RADIO_EVENT_END);
 
+	LOG_ERR("%d:%d: on dis: NULL", __LINE__, NRF_RADIO->STATE);
 	on_radio_disabled = NULL;
 
 	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
@@ -2221,7 +2315,7 @@ int esb_stop_rx(void)
 
 	nrf_radio_event_clear(NRF_RADIO, NRF_RADIO_EVENT_DISABLED);
 
-	esb_state = ESB_STATE_IDLE;
+	set_esb_state(ESB_STATE_IDLE);
 	errata216_off();
 
 	return 0;
@@ -2406,15 +2500,18 @@ int esb_set_rf_channel(uint32_t channel)
 	}
 
 	if (esb_state != ESB_STATE_IDLE) {
+		LOG_DBG("Not in IDLE state");
 		if (IS_ENABLED(CONFIG_ESB_FAST_CHANNEL_SWITCHING)) {
 			if (esb_state == ESB_STATE_PRX) {
-				fast_switchinng_set_channel(channel);
+				fast_switching_set_channel(channel);
 			} else {
 				atomic_set_bit(&esb_addr.rf_channel_flags, RF_CHANNEL_UPDATE_FLAG);
 			}
 		} else {
 			return -EBUSY;
 		}
+	} else {
+		LOG_DBG("In IDLE state");
 	}
 
 	esb_addr.rf_channel = channel;
