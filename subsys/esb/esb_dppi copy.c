@@ -37,7 +37,7 @@ static uint8_t radio_end_timer_start;
 static nrf_dppi_channel_group_t ramp_up_dppi_group;
 
 #if defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF54LX)
-#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(2, 0)
+#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(1, 0)
 #endif
 
 const struct gpio_dt_spec debug_pin_spec = GPIO_DT_SPEC_GET(DT_NODELABEL(debug_pin), gpios);
@@ -86,11 +86,11 @@ static int esb_debug_gpio_setup(void)
         }
     }
 
-//     err = nrfx_gpiote_channel_alloc(&esb_gpiote, &esb_dbg_gpiote_chan_ready_end);
-//     if (err != NRFX_SUCCESS) {
-//         LOG_ERR("GPIOTE channel alloc failed: %d", err);
-//         return -ENODEV;
-//     }
+    err = nrfx_gpiote_channel_alloc(&esb_gpiote, &esb_dbg_gpiote_chan_ready_end);
+    if (err != NRFX_SUCCESS) {
+        LOG_ERR("GPIOTE channel alloc failed: %d", err);
+        return -ENODEV;
+    }
     esb_dbg_gpiote_chan_ready_end = 0;
 
     const nrfx_gpiote_output_config_t out_cfg = NRFX_GPIOTE_DEFAULT_OUTPUT_CONFIG;
@@ -100,15 +100,11 @@ static int esb_debug_gpio_setup(void)
         .init_val = NRF_GPIOTE_INITIAL_VALUE_HIGH,
     };
 
-    LOG_ERR("%d", ESB_GPIO_DEBUG_PIN);
-
     err = nrfx_gpiote_output_configure(&esb_gpiote, ESB_GPIO_DEBUG_PIN, &out_cfg, &task_cfg);
     if (err != NRFX_SUCCESS) {
         LOG_ERR("GPIOTE output configure failed: %d", err);
         return -ENODEV;
     }
-
-    //nrfx_gpiote_out_set(&esb_gpiote, ESB_GPIO_DEBUG_PIN);
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
     if (nrfx_gppi_channel_alloc(&esb_dbg_gppi_bridge_ready) != NRFX_SUCCESS ||
@@ -162,10 +158,10 @@ static int esb_debug_gpio_setup(void)
 #endif
 
     nrf_gpiote_subscribe_set(esb_gpiote.p_reg,
-				NRF_GPIOTE_TASK_SET_0,
+                             nrfx_gpiote_set_task_address_get(&esb_gpiote, ESB_GPIO_DEBUG_PIN),
                              esb_dbg_dppi_gpio_ready);
     nrf_gpiote_subscribe_set(esb_gpiote.p_reg,
-				NRF_GPIOTE_TASK_CLR_0,
+                             nrfx_gpiote_clr_task_address_get(&esb_gpiote, ESB_GPIO_DEBUG_PIN),
                              esb_dbg_dppi_gpio_end);
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
@@ -177,11 +173,9 @@ static int esb_debug_gpio_setup(void)
     (void)nrfx_dppi_channel_enable(&esb_dppi_gpio_domain,  esb_dbg_dppi_gpio_ready);
     (void)nrfx_dppi_channel_enable(&esb_dppi_gpio_domain,  esb_dbg_dppi_gpio_end);
 
-
     nrfx_gpiote_out_task_enable(&esb_gpiote, ESB_GPIO_DEBUG_PIN);
 
     esb_dbg_gpio_active = true;
-	LOG_ERR("DONE !!!!!!!");
     return 0;
 }
 

@@ -16,6 +16,7 @@
 #include <zephyr/types.h>
 #include <zephyr/pm/device_runtime.h>
 #include <dk_buttons_and_leds.h>
+#include <zephyr/drivers/gpio.h>
 #if defined(CONFIG_CLOCK_CONTROL_NRF2)
 #include <hal/nrf_lrcconf.h>
 #endif
@@ -203,6 +204,8 @@ static void leds_update(uint8_t value)
 	dk_set_leds(leds_mask);
 }
 
+extern const struct gpio_dt_spec debug_pin_spec;
+
 int main(void)
 {
 	int err;
@@ -241,7 +244,14 @@ int main(void)
 	LOG_INF("Initialization complete");
 	LOG_INF("Sending test packet");
 
+	// err = gpio_pin_configure_dt(&debug_pin_spec, GPIO_OUTPUT_INACTIVE);
+	// if (err) {
+    //     LOG_ERR("PIN configure failed: %d", err);
+	// 	return -ENODEV;
+	// }
+
 	tx_payload.noack = false;
+	int on = 0;
 	while (1) {
 		if (ready) {
 			ready = false;
@@ -255,5 +265,9 @@ int main(void)
 			tx_payload.data[1]++;
 		}
 		k_sleep(K_MSEC(100));
+		//gpio_pin_toggle_dt(&debug_pin_spec);
+		//*(volatile int32_t*)(0x5F938200 + ((on & 3) ? 0x008 : 0x004)) = 1 << 0; // P1.0 toggle
+		*(volatile int32_t*)(0x53027000 + 4 * 0) = 1; // GPIO0.TASK_OUT[0]
+		on++;
 	}
 }

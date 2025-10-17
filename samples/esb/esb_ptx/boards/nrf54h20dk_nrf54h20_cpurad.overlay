@@ -42,6 +42,15 @@
 		mboxes = < &cpusys_vevif 0x14 >, < &cpusys_vevif 0x15 >;
 		mbox-names = "on_req", "off_req";
 	};
+
+	gpiosout {
+		compatible = "gpio-leds";
+		debug_pin: debug-pin {
+			gpios = <&gpio2 0 0>;
+			label = "GPIO Debug pin";
+		};
+	};
+
 };
 
 &gpio9 {
@@ -53,6 +62,10 @@
 };
 
 &gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
 	status = "okay";
 };
 
