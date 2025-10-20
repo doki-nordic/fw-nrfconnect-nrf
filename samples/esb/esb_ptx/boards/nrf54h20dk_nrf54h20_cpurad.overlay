@@ -43,13 +43,13 @@
 		mbox-names = "on_req", "off_req";
 	};
 
-	gpiosout {
+	/*gpiosout {
 		compatible = "gpio-leds";
 		debug_pin: debug-pin {
 			gpios = <&gpio2 0 0>;
 			label = "GPIO Debug pin";
 		};
-	};
+	};*/
 
 };
 
@@ -67,6 +67,20 @@
 
 &gpio2 {
 	status = "okay";
+};
+
+&pinctrl {
+	gpiote0_default_alt: gpiote0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 5)>;
+		};
+	};
+};
+
+&gpiote0 {
+    status = "okay";
+	pinctrl-0 = <&gpiote0_default_alt>;
+	pinctrl-names = "default";
 };
 
 &gpiote130 {

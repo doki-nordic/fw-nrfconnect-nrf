@@ -37,10 +37,10 @@ static uint8_t radio_end_timer_start;
 static nrf_dppi_channel_group_t ramp_up_dppi_group;
 
 #if defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF54LX)
-#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(2, 0)
+#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(1, 5)
 #endif
 
-const struct gpio_dt_spec debug_pin_spec = GPIO_DT_SPEC_GET(DT_NODELABEL(debug_pin), gpios);
+//const struct gpio_dt_spec debug_pin_spec = GPIO_DT_SPEC_GET(DT_NODELABEL(debug_pin), gpios);
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
 static const nrfx_dppi_t esb_dppi_radio_domain = NRFX_DPPI_INSTANCE(10);

@@ -267,7 +267,13 @@ int main(void)
 		k_sleep(K_MSEC(100));
 		//gpio_pin_toggle_dt(&debug_pin_spec);
 		//*(volatile int32_t*)(0x5F938200 + ((on & 3) ? 0x008 : 0x004)) = 1 << 0; // P1.0 toggle
-		*(volatile int32_t*)(0x53027000 + 4 * 0) = 1; // GPIO0.TASK_OUT[0]
+		static int x = 0;
+		if (x) {
+			*(volatile int32_t*)(0x53027000 + 0x030 + 4 * 0) = 1; // GPIO0.TASK_OUT[0]
+		} else {
+			*(volatile int32_t*)(0x53027000 + 0x060 + 4 * 0) = 1; // GPIO0.TASK_OUT[0]
+		}
+		x ^= 1;
 		on++;
 	}
 }
