@@ -1,0 +1,32 @@
+common:
+  sysbuild: true
+  tags:
+    - gpio
+tests:
+  nrfx.ontarget.gpiote:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+      - nrf54h20dk/nrf54h20/cpurad
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+  nrfx.ontarget.gpiote.ppr:
+    # Test does not pass as regtool does not support proper configuration of pins
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuppr
+    extra_args:
+      - vpr_launcher_SNIPPET=nrfx-test-vpr-launcher
+    build_only: true
+  nrfx.ontarget.gpiote.gpiote0:
+    platform_allow:
+        - nrf54h20dk/nrf54h20/cpurad
+    extra_args:
+        - EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0_in_pin.overlay"
+    extra_configs:
+        - CONFIG_TEST_GPIOTE_0=y
+  nrfx.ontarget.gpiote.gpiote0_task_out:
+    platform_allow:
+        - nrf54h20dk/nrf54h20/cpurad
+    extra_args:
+        - EXTRA_DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpurad_gpiote0_out_pin.overlay"
+    extra_configs:
+        - CONFIG_TEST_GPIOTE_0_OUT_PIN=y

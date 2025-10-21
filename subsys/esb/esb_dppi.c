@@ -34,7 +34,7 @@ static uint8_t radio_end_timer_start;
 static nrf_dppi_channel_group_t ramp_up_dppi_group;
 
 #if defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF54LX)
-#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(1, 10)
+#define ESB_GPIO_DEBUG_PIN NRF_GPIO_PIN_MAP(1, 5)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_NRF54LX)
@@ -74,11 +74,12 @@ static int esb_debug_gpio_setup(void)
         }
     }
 
-    err = nrfx_gpiote_channel_alloc(&esb_gpiote, &esb_dbg_gpiote_chan_ready_end);
-    if (err != NRFX_SUCCESS) {
-        LOG_ERR("GPIOTE channel alloc failed: %d", err);
-        return -ENODEV;
-    }
+    // err = nrfx_gpiote_channel_alloc(&esb_gpiote, &esb_dbg_gpiote_chan_ready_end);
+    // if (err != NRFX_SUCCESS) {
+    //     LOG_ERR("GPIOTE channel alloc failed: %d", err);
+    //     return -ENODEV;
+    // }
+	esb_dbg_gpiote_chan_ready_end = 5;
 
     const nrfx_gpiote_output_config_t out_cfg = NRFX_GPIOTE_DEFAULT_OUTPUT_CONFIG;
     const nrfx_gpiote_task_config_t task_cfg = {
@@ -164,8 +165,6 @@ static int esb_debug_gpio_setup(void)
     esb_dbg_gpio_active = true;
     return 0;
 }
-
-#endif /* CONFIG_SOC_SERIES_NRF54HX || CONFIG_SOC_SERIES_NRF54LX */
 
 void esb_ppi_for_txrx_set(bool rx, bool timer_start)
 {

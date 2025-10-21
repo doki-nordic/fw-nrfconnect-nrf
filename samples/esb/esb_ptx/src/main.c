@@ -255,5 +255,12 @@ int main(void)
 			tx_payload.data[1]++;
 		}
 		k_sleep(K_MSEC(100));
+		static int x = 0;
+		if (x) {
+			*(volatile int32_t*)(0x53027000 + 0x030 + 4 * 5) = 1; // GPIO0.TASK_OUT[0]
+		} else {
+			*(volatile int32_t*)(0x53027000 + 0x060 + 4 * 5) = 1; // GPIO0.TASK_OUT[0]
+		}
+		x ^= 1;
 	}
 }

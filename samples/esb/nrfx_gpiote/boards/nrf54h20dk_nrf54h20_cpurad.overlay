@@ -1,0 +1,19 @@
+
+&pinctrl {
+	gpiote0_default_alt: gpiote0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 4)>;
+		};
+	};
+};
+
+&gpio1 {
+    status = "okay";
+};
+
+&gpiote0 {
+    status = "okay";
+	pinctrl-0 = <&gpiote0_default_alt>;
+	pinctrl-names = "default";
+};
+
