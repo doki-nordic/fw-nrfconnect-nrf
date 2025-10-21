@@ -238,6 +238,9 @@ int main(void)
 		return 0;
 	}
 
+	esb_set_rf_channel(30);
+	int i = 0;
+
 	LOG_INF("Initialization complete");
 	LOG_INF("Sending test packet");
 
@@ -245,6 +248,7 @@ int main(void)
 	while (1) {
 		if (ready) {
 			ready = false;
+			LOG_ERR("STATE %d", NRF_RADIO->STATE);
 			esb_flush_tx();
 			leds_update(tx_payload.data[1]);
 
@@ -255,5 +259,7 @@ int main(void)
 			tx_payload.data[1]++;
 		}
 		k_sleep(K_MSEC(100));
+		esb_set_rf_channel(i & 1 ? 30 : 20);
+		i++;
 	}
 }
