@@ -28,6 +28,15 @@ extern "C" {
  *        acknowledgment, and automatic retransmission of lost packets.
  */
 
+
+#ifdef CONFIG_ESB
+#define ESB_MAX_PAYLOAD_LENGTH CONFIG_ESB_MAX_PAYLOAD_LENGTH
+#elif ESB_MAX_DATA_PAYLOAD_LENGTH > ESB_MAX_ACK_PAYLOAD_LENGTH
+#define ESB_MAX_PAYLOAD_LENGTH ESB_MAX_DATA_PAYLOAD_LENGTH
+#else
+#define ESB_MAX_PAYLOAD_LENGTH ESB_MAX_ACK_PAYLOAD_LENGTH
+#endif
+
 /** @brief Default radio parameters.
  *
  *  Roughly equal to the nRF24Lxx default parameters except for CRC,
@@ -49,6 +58,8 @@ extern "C" {
 		.use_fast_ramp_up = false                                      \
 	}
 
+#ifdef CONFIG_ESB
+
 /** @brief Default legacy radio parameters.
  *
  *  Identical to the nRF24Lxx defaults.
@@ -68,6 +79,8 @@ extern "C" {
 		.selective_auto_ack = false,                                   \
 		.use_fast_ramp_up = false                                      \
 	}
+
+#endif /* CONFIG_ESB */
 
 /** @brief Macro to create an initializer for a TX data packet.
  *
@@ -297,8 +310,15 @@ struct esb_payload {
 		       *  acknowledged. Flag is ignored when selective auto
 		       *  ack is enabled.
 		       */
+#ifdef CONFIG_ESB_HOLD_TX
+	uint32_t hold_tx_timeout; /**< Hold TX timeout in microseconds.
+				   * If set to zero, TX hold is disabled.
+				   * If set to ESB_HOLD_TX_FOREVER, TX is held
+				   * until next transmission.
+				   */
+#endif
 	uint8_t pid;    /**< PID assigned during communication. */
-	uint8_t data[CONFIG_ESB_MAX_PAYLOAD_LENGTH]; /**< The payload data. */
+	uint8_t data[ESB_MAX_PAYLOAD_LENGTH]; /**< The payload data. */
 };
 
 /** @brief Enhanced ShockBurst event. */
@@ -356,13 +376,19 @@ struct esb_config {
 				 */
 };
 
+#ifdef CONFIG_ESB
+#define ESB_CALL
+#else
+#define ESB_CALL static inline
+#endif
+
 /** @brief Initialize the Enhanced ShockBurst module.
  *
  *  @param  config	Parameters for initializing the module.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int esb_init(const struct esb_config *config);
+ESB_CALL int esb_init(const struct esb_config *config);
 
 /** @brief Suspend the Enhanced ShockBurst module.
  *
@@ -372,7 +398,7 @@ int esb_init(const struct esb_config *config);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_suspend(void);
+ESB_CALL int esb_suspend(void);
 
 /** @brief Disable the Enhanced ShockBurst module.
  *
@@ -382,13 +408,13 @@ int esb_suspend(void);
  *  @note All queues are flushed by this function.
  *
  */
-void esb_disable(void);
+ESB_CALL void esb_disable(void);
 
 /** @brief Check if the Enhanced ShockBurst module is idle.
  *
  *  @return True if the module is idle, false otherwise.
  */
-bool esb_is_idle(void);
+ESB_CALL bool esb_is_idle(void);
 
 /** @brief Write a payload for transmission or acknowledgement.
  *
@@ -402,7 +428,7 @@ bool esb_is_idle(void);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_write_payload(const struct esb_payload *payload);
+ESB_CALL int esb_write_payload(const struct esb_payload *payload);
 
 /** @brief Read a payload.
  *
@@ -411,28 +437,28 @@ int esb_write_payload(const struct esb_payload *payload);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_read_rx_payload(struct esb_payload *payload);
+ESB_CALL int esb_read_rx_payload(struct esb_payload *payload);
 
 /** @brief Start transmitting data.
  *
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_start_tx(void);
+ESB_CALL int esb_start_tx(void);
 
 /** @brief Start receiving data.
  *
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_start_rx(void);
+ESB_CALL int esb_start_rx(void);
 
 /** @brief Stop data reception.
  *
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_stop_rx(void);
+ESB_CALL int esb_stop_rx(void);
 
 /** @brief Flush the TX buffer.
  *
@@ -441,27 +467,27 @@ int esb_stop_rx(void);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_flush_tx(void);
+ESB_CALL int esb_flush_tx(void);
 
 /** @brief Pop the first item from the TX buffer.
  *
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_pop_tx(void);
+ESB_CALL int esb_pop_tx(void);
 
 /** @brief Check if there is some free space left in TX FIFO.
  *
  * @retval true when the TX FIFO is full, otherwise false.
  */
-bool esb_tx_full(void);
+ESB_CALL bool esb_tx_full(void);
 
 /** @brief Flush the RX buffer.
  *
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_flush_rx(void);
+ESB_CALL int esb_flush_rx(void);
 
 /** @brief Set the length of the address.
  *
@@ -470,7 +496,7 @@ int esb_flush_rx(void);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_address_length(uint8_t length);
+ESB_CALL int esb_set_address_length(uint8_t length);
 
 /** @brief Set the base address for pipe 0.
  *
@@ -479,7 +505,7 @@ int esb_set_address_length(uint8_t length);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_base_address_0(const uint8_t *addr);
+ESB_CALL int esb_set_base_address_0(const uint8_t *addr);
 
 /** @brief Set the base address for pipe 1 to pipe 7.
  *
@@ -488,7 +514,7 @@ int esb_set_base_address_0(const uint8_t *addr);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_base_address_1(const uint8_t *addr);
+ESB_CALL int esb_set_base_address_1(const uint8_t *addr);
 
 /** @brief Set the number of pipes and the pipe prefix addresses.
  *
@@ -502,7 +528,7 @@ int esb_set_base_address_1(const uint8_t *addr);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes);
+ESB_CALL int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes);
 
 /** @brief Enable select pipes.
  *
@@ -517,7 +543,7 @@ int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_enable_pipes(uint8_t enable_mask);
+ESB_CALL int esb_enable_pipes(uint8_t enable_mask);
 
 /** @brief Update pipe prefix.
  *
@@ -527,7 +553,7 @@ int esb_enable_pipes(uint8_t enable_mask);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_update_prefix(uint8_t pipe, uint8_t prefix);
+ESB_CALL int esb_update_prefix(uint8_t pipe, uint8_t prefix);
 
 /** @brief Set the channel to use for the radio.
  *
@@ -541,7 +567,7 @@ int esb_update_prefix(uint8_t pipe, uint8_t prefix);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_rf_channel(uint32_t channel);
+ESB_CALL int esb_set_rf_channel(uint32_t channel);
 
 /** @brief Get the current radio channel.
  *
@@ -550,7 +576,7 @@ int esb_set_rf_channel(uint32_t channel);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_get_rf_channel(uint32_t *channel);
+ESB_CALL int esb_get_rf_channel(uint32_t *channel);
 
 /** @brief Set the radio output power.
  *
@@ -560,7 +586,7 @@ int esb_get_rf_channel(uint32_t *channel);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_tx_power(int8_t tx_output_power);
+ESB_CALL int esb_set_tx_power(int8_t tx_output_power);
 
 /** @brief Set the packet retransmit delay.
  *
@@ -569,7 +595,7 @@ int esb_set_tx_power(int8_t tx_output_power);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_retransmit_delay(uint16_t delay);
+ESB_CALL int esb_set_retransmit_delay(uint16_t delay);
 
 /** @brief Set the number of retransmission attempts.
  *  @details If the CONFIG_ESB_NEVER_DISABLE_TX Kconfig option is enabled,
@@ -582,7 +608,7 @@ int esb_set_retransmit_delay(uint16_t delay);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_retransmit_count(uint16_t count);
+ESB_CALL int esb_set_retransmit_count(uint16_t count);
 
 /** @brief Set the radio bitrate.
  *
@@ -591,7 +617,7 @@ int esb_set_retransmit_count(uint16_t count);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_set_bitrate(enum esb_bitrate bitrate);
+ESB_CALL int esb_set_bitrate(enum esb_bitrate bitrate);
 
 /** @brief Reuse a packet ID for a specific pipe.
  *
@@ -605,9 +631,410 @@ int esb_set_bitrate(enum esb_bitrate bitrate);
  * @retval 0 If successful.
  *           Otherwise, a (negative) error code is returned.
  */
-int esb_reuse_pid(uint8_t pipe);
+ESB_CALL int esb_reuse_pid(uint8_t pipe);
 
 /** @} */
+
+#if IS_ENABLED(CONFIG_ESB_PTX) && IS_ENABLED(CONFIG_ESB_PRX)
+
+int esb_init(const struct esb_config *config) {
+	int esb_ptx_init(const struct esb_config *config);
+	int esb_prx_init(const struct esb_config *config);
+	if (config->mode == ESB_MODE_PTX) {
+		return esb_ptx_init(config);
+	} else if (config->mode == ESB_MODE_PRX) {
+		return esb_prx_init(config);
+	} else {
+		return -EINVAL;
+	}
+}
+
+int esb_suspend(void) {
+	extern int (*esb_lite_suspend)(void);
+	return esb_lite_suspend();
+}
+
+void esb_disable(void) {
+	extern void (*esb_lite_disable)(void);
+	return esb_lite_disable();
+}
+
+bool esb_is_idle(void) {
+	extern bool (*esb_lite_is_idle)(void);
+	return esb_lite_is_idle();
+}
+
+int esb_write_payload(const struct esb_payload *payload) {
+	extern int (*esb_lite_write_payload)(const struct esb_payload *payload);
+	return esb_lite_write_payload(payload);
+}
+
+int esb_read_rx_payload(struct esb_payload *payload) {
+	extern int (*esb_lite_read_rx_payload)(struct esb_payload *payload);
+	return esb_lite_read_rx_payload(payload);
+}
+
+int esb_start_tx(void) {
+	extern int (*esb_lite_start_tx)(void);
+	return esb_lite_start_tx();
+}
+
+int esb_start_rx(void) {
+	extern int (*esb_lite_start_rx)(void);
+	return esb_lite_start_rx();
+}
+
+int esb_stop_rx(void) {
+	extern int (*esb_lite_stop_rx)(void);
+	return esb_lite_stop_rx();
+}
+
+int esb_flush_tx(void) {
+	extern int (*esb_lite_flush_tx)(void);
+	return esb_lite_flush_tx();
+}
+
+int esb_pop_tx(void) {
+	extern int (*esb_lite_pop_tx)(void);
+	return esb_lite_pop_tx();
+}
+
+bool esb_tx_full(void) {
+	extern bool (*esb_lite_tx_full)(void);
+	return esb_lite_tx_full();
+}
+
+int esb_flush_rx(void) {
+	extern int (*esb_lite_flush_rx)(void);
+	return esb_lite_flush_rx();
+}
+
+int esb_set_address_length(uint8_t length) {
+	extern int (*esb_lite_set_address_length)(uint8_t length);
+	return esb_lite_set_address_length(length);
+}
+
+int esb_set_base_address_0(const uint8_t *addr) {
+	extern int (*esb_lite_set_base_address_0)(const uint8_t *addr);
+	return esb_lite_set_base_address_0(addr);
+}
+
+int esb_set_base_address_1(const uint8_t *addr) {
+	extern int (*esb_lite_set_base_address_1)(const uint8_t *addr);
+	return esb_lite_set_base_address_1(addr);
+}
+
+int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes) {
+	extern int (*esb_lite_set_prefixes)(const uint8_t *prefixes, uint8_t num_pipes);
+	return esb_lite_set_prefixes(prefixes, num_pipes);
+}
+
+int esb_enable_pipes(uint8_t enable_mask) {
+	extern int (*esb_lite_enable_pipes)(uint8_t enable_mask);
+	return esb_lite_enable_pipes(enable_mask);
+}
+
+int esb_update_prefix(uint8_t pipe, uint8_t prefix) {
+	extern int (*esb_lite_update_prefix)(uint8_t pipe, uint8_t prefix);
+	return esb_lite_update_prefix(pipe, prefix);
+}
+
+int esb_set_rf_channel(uint32_t channel) {
+	extern int (*esb_lite_set_rf_channel)(uint32_t channel);
+	return esb_lite_set_rf_channel(channel);
+}
+
+int esb_get_rf_channel(uint32_t *channel) {
+	extern int (*esb_lite_get_rf_channel)(uint32_t *channel);
+	return esb_lite_get_rf_channel(channel);
+}
+
+int esb_set_tx_power(int8_t tx_output_power) {
+	extern int (*esb_lite_set_tx_power)(int8_t tx_output_power);
+	return esb_lite_set_tx_power(tx_output_power);
+}
+
+int esb_set_retransmit_delay(uint16_t delay) {
+	extern int (*esb_lite_set_retransmit_delay)(uint16_t delay);
+	return esb_lite_set_retransmit_delay(delay);
+}
+
+int esb_set_retransmit_count(uint16_t count) {
+	extern int (*esb_lite_set_retransmit_count)(uint16_t count);
+	return esb_lite_set_retransmit_count(count);
+}
+
+int esb_set_bitrate(enum esb_bitrate bitrate) {
+	extern int (*esb_lite_set_bitrate)(enum esb_bitrate bitrate);
+	return esb_lite_set_bitrate(bitrate);
+}
+
+int esb_reuse_pid(uint8_t pipe) {
+	extern int (*esb_lite_reuse_pid)(uint8_t pipe);
+	return esb_lite_reuse_pid(pipe);
+}
+
+#elif IS_ENABLED(CONFIG_ESB_PRX)
+
+int esb_init(const struct esb_config *config) {
+	int esb_prx_init(const struct esb_config *config);
+	return esb_prx_init(config);
+}
+
+int esb_suspend(void) {
+	int esb_prx_suspend(void);
+	return esb_prx_suspend();
+}
+
+void esb_disable(void) {
+	void esb_prx_disable(void);
+	return esb_prx_disable();
+}
+
+bool esb_is_idle(void) {
+	bool esb_prx_is_idle(void);
+	return esb_prx_is_idle();
+}
+
+int esb_write_payload(const struct esb_payload *payload) {
+	int esb_prx_write_payload(const struct esb_payload *payload);
+	return esb_prx_write_payload(payload);
+}
+
+int esb_read_rx_payload(struct esb_payload *payload) {
+	int esb_prx_read_rx_payload(struct esb_payload *payload);
+	return esb_prx_read_rx_payload(payload);
+}
+
+int esb_start_tx(void) {
+	return -ENOSYS;
+}
+
+int esb_start_rx(void) {
+	int esb_prx_start_rx(void);
+	return esb_prx_start_rx();
+}
+
+int esb_stop_rx(void) {
+	int esb_prx_stop_rx(void);
+	return esb_prx_stop_rx();
+}
+
+int esb_flush_tx(void) {
+	int esb_prx_flush_tx(void);
+	return esb_prx_flush_tx();
+}
+
+int esb_pop_tx(void) {
+	return -ENOSYS;
+}
+
+bool esb_tx_full(void) {
+	bool esb_prx_tx_full(void);
+	return esb_prx_tx_full();
+}
+
+int esb_flush_rx(void) {
+	int esb_prx_flush_rx(void);
+	return esb_prx_flush_rx();
+}
+
+int esb_set_address_length(uint8_t length) {
+	int esb_prx_set_address_length(uint8_t length);
+	return esb_prx_set_address_length(length);
+}
+
+int esb_set_base_address_0(const uint8_t *addr) {
+	int esb_prx_set_base_address_0(const uint8_t *addr);
+	return esb_prx_set_base_address_0(addr);
+}
+
+int esb_set_base_address_1(const uint8_t *addr) {
+	int esb_prx_set_base_address_1(const uint8_t *addr);
+	return esb_prx_set_base_address_1(addr);
+}
+
+int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes) {
+	int esb_prx_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes);
+	return esb_prx_set_prefixes(prefixes, num_pipes);
+}
+
+int esb_enable_pipes(uint8_t enable_mask) {
+	int esb_prx_enable_pipes(uint8_t enable_mask);
+	return esb_prx_enable_pipes(enable_mask);
+}
+
+int esb_update_prefix(uint8_t pipe, uint8_t prefix) {
+	int esb_prx_update_prefix(uint8_t pipe, uint8_t prefix);
+	return esb_prx_update_prefix(pipe, prefix);
+}
+
+int esb_set_rf_channel(uint32_t channel) {
+	int esb_prx_set_rf_channel(uint32_t channel);
+	return esb_prx_set_rf_channel(channel);
+}
+
+int esb_get_rf_channel(uint32_t *channel) {
+	int esb_prx_get_rf_channel(uint32_t *channel);
+	return esb_prx_get_rf_channel(channel);
+}
+
+int esb_set_tx_power(int8_t tx_output_power) {
+	int esb_prx_set_tx_power(int8_t tx_output_power);
+	return esb_prx_set_tx_power(tx_output_power);
+}
+
+int esb_set_retransmit_delay(uint16_t delay) {
+	int esb_prx_set_retransmit_delay(uint16_t delay);
+	return esb_prx_set_retransmit_delay(delay);
+}
+
+int esb_set_retransmit_count(uint16_t count) {
+	int esb_prx_set_retransmit_count(uint16_t count);
+	return esb_prx_set_retransmit_count(count);
+}
+
+int esb_set_bitrate(enum esb_bitrate bitrate) {
+	int esb_prx_set_bitrate(enum esb_bitrate bitrate);
+	return esb_prx_set_bitrate(bitrate);
+}
+
+int esb_reuse_pid(uint8_t pipe) {
+	int esb_prx_reuse_pid(uint8_t pipe);
+	return esb_prx_reuse_pid(pipe);
+}
+
+#elif IS_ENABLED(CONFIG_ESB_PTX)
+
+int esb_init(const struct esb_config *config) {
+	int esb_ptx_init(const struct esb_config *config);
+	return esb_ptx_init(config);
+}
+
+int esb_suspend(void) {
+	int esb_ptx_suspend(void);
+	return esb_ptx_suspend();
+}
+
+void esb_disable(void) {
+	void esb_ptx_disable(void);
+	return esb_ptx_disable();
+}
+
+bool esb_is_idle(void) {
+	bool esb_ptx_is_idle(void);
+	return esb_ptx_is_idle();
+}
+
+int esb_write_payload(const struct esb_payload *payload) {
+	int esb_ptx_write_payload(const struct esb_payload *payload);
+	return esb_ptx_write_payload(payload);
+}
+
+int esb_read_rx_payload(struct esb_payload *payload) {
+	int esb_ptx_read_rx_payload(struct esb_payload *payload);
+	return esb_ptx_read_rx_payload(payload);
+}
+
+int esb_start_tx(void) {
+	int esb_ptx_start_tx(void);
+	return esb_ptx_start_tx();
+}
+
+int esb_start_rx(void) {
+	return -ENOSYS;
+}
+
+int esb_stop_rx(void) {
+	return -ENOSYS;
+}
+
+int esb_flush_tx(void) {
+	int esb_ptx_flush_tx(void);
+	return esb_ptx_flush_tx();
+}
+
+int esb_pop_tx(void) {
+	int esb_ptx_pop_tx(void);
+	return esb_ptx_pop_tx();
+}
+
+bool esb_tx_full(void) {
+	bool esb_ptx_tx_full(void);
+	return esb_ptx_tx_full();
+}
+
+int esb_flush_rx(void) {
+	int esb_ptx_flush_rx(void);
+	return esb_ptx_flush_rx();
+}
+
+int esb_set_address_length(uint8_t length) {
+	int esb_ptx_set_address_length(uint8_t length);
+	return esb_ptx_set_address_length(length);
+}
+
+int esb_set_base_address_0(const uint8_t *addr) {
+	int esb_ptx_set_base_address_0(const uint8_t *addr);
+	return esb_ptx_set_base_address_0(addr);
+}
+
+int esb_set_base_address_1(const uint8_t *addr) {
+	int esb_ptx_set_base_address_1(const uint8_t *addr);
+	return esb_ptx_set_base_address_1(addr);
+}
+
+int esb_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes) {
+	int esb_ptx_set_prefixes(const uint8_t *prefixes, uint8_t num_pipes);
+	return esb_ptx_set_prefixes(prefixes, num_pipes);
+}
+
+int esb_enable_pipes(uint8_t enable_mask) {
+	int esb_ptx_enable_pipes(uint8_t enable_mask);
+	return esb_ptx_enable_pipes(enable_mask);
+}
+
+int esb_update_prefix(uint8_t pipe, uint8_t prefix) {
+	int esb_ptx_update_prefix(uint8_t pipe, uint8_t prefix);
+	return esb_ptx_update_prefix(pipe, prefix);
+}
+
+int esb_set_rf_channel(uint32_t channel) {
+	int esb_ptx_set_rf_channel(uint32_t channel);
+	return esb_ptx_set_rf_channel(channel);
+}
+
+int esb_get_rf_channel(uint32_t *channel) {
+	int esb_ptx_get_rf_channel(uint32_t *channel);
+	return esb_ptx_get_rf_channel(channel);
+}
+
+int esb_set_tx_power(int8_t tx_output_power) {
+	int esb_ptx_set_tx_power(int8_t tx_output_power);
+	return esb_ptx_set_tx_power(tx_output_power);
+}
+
+int esb_set_retransmit_delay(uint16_t delay) {
+	int esb_ptx_set_retransmit_delay(uint16_t delay);
+	return esb_ptx_set_retransmit_delay(delay);
+}
+
+int esb_set_retransmit_count(uint16_t count) {
+	int esb_ptx_set_retransmit_count(uint16_t count);
+	return esb_ptx_set_retransmit_count(count);
+}
+
+int esb_set_bitrate(enum esb_bitrate bitrate) {
+	int esb_ptx_set_bitrate(enum esb_bitrate bitrate);
+	return esb_ptx_set_bitrate(bitrate);
+}
+
+int esb_reuse_pid(uint8_t pipe) {
+	int esb_ptx_reuse_pid(uint8_t pipe);
+	return esb_ptx_reuse_pid(pipe);
+}
+
+#endif
 
 #ifdef __cplusplus
 }
