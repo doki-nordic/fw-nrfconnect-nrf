@@ -4,8 +4,12 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-menuconfig ESB
+
+menu "Enhanced ShockBurst"
+
+config ESB
 	bool "Enhanced ShockBurst"
+	depends on !ESB_LITE
 	select NRFX_PPI if HAS_HW_NRF_PPI
 	select NRFX_DPPI if HAS_HW_NRF_DPPIC
 	select MPSL
@@ -13,6 +17,47 @@ menuconfig ESB
 	default n
 	help
 	  Enable ESB functionality.
+
+config ESB_PTX
+	bool "Enhanced ShockBurst Lite in PTX mode"
+	select ESB_LITE
+	help
+	  Enable PTX (Primary Transmitter) mode.
+	  The actual mode is selected at runtime with the esb_init() function.
+	  To reduce code size, consider disabling it if your application
+	  does not use PTX mode.
+
+config ESB_PRX
+	bool "Enhanced ShockBurst Lite in PRX mode"
+	select ESB_LITE
+	help
+	  Enable PRX (Primary Receiver) mode.
+	  The actual mode is selected at runtime with the esb_init() function.
+	  To reduce code size, consider disabling it if your application
+	  does not use PRX mode.
+
+config ESB_LITE
+	bool
+
+if ESB_LITE
+
+config ESB_MAX_DATA_PAYLOAD_LENGTH
+	int "Maximum payload size for data packets" # TODO: How to call packets with data vs ACK packets?
+	default 32
+	range 1 252
+	help
+	  The maximum size of the payload contained in the data packets.
+	  ACK packets are configured with ESB_MAX_ACK_PAYLOAD_LENGTH.
+
+config ESB_MAX_ACK_PAYLOAD_LENGTH
+	int "Maximum payload size for ACK packets"
+	default 32
+	range 0 252
+	help
+	  The maximum size of the payload contained in the ACK packets.
+	  Set to 0 to disable ACK payloads.
+
+endif # ESB_LITE
 
 if ESB
 
@@ -22,6 +67,10 @@ config ESB_MAX_PAYLOAD_LENGTH
 	range 1 252
 	help
 	  The maximum size of the payload.
+
+endif # ESB
+
+if ESB || ESB_LITE
 
 config ESB_TX_FIFO_SIZE
 	int "TX buffer length"
@@ -139,6 +188,51 @@ config ESB_DYNAMIC_INTERRUPTS
 	  interrupts. This allows reconfiguring ESB_SYS_TIMER_IRQn, ESB_EVT_IRQ,
 	  and RADIO_IRQn handlers during runtime when ESB is uninitialized.
 
+endif # ESB || ESB_LITE
+
+if ESB_LITE
+
+choice ESB_ACK_MODE
+	prompt "ACK sending mode"
+	default ESB_ACK_DYNAMIC
+
+config ESB_ACK_DYNAMIC
+	bool "Dynamic ACK sending"
+	help
+	  ACK is may be send or not based on flag set by PTX.
+	  If your application uses only one of the modes, consider selecting
+	  ESB_ACK_ALWAYS or ESB_ACK_NEVER.
+
+config ESB_ACK_ALWAYS
+	bool "Always send ACK"
+	help
+	  ACK is always sent by PRX and PTX always waits for ACK.
+	  Packet flags and configurations related to ACK are ignored.
+
+config ESB_ACK_NEVER
+	bool "Never send ACK"
+	help
+	  ACK is disabled. PRX never sends ACK and PTX never waits for ACK.
+	  Packet flags and configurations related to ACK are ignored.
+
+endchoice
+
+config ESB_HOLD_TX
+	bool "Hold TX state after transmission"
+	depends on !ESB_ACK_ALWAYS
+	depends on ESB_PTX
+	help
+	  When enabled, the radio remains in TX mode after a transmission is complete
+	  and there are no pending packets to send. It does not work if ACK is expected
+	  since the radio must switch to RX mode to receive the ACK.
+	  This can reduce latency for subsequent transmissions, but increases power consumption.
+	  Enabling hold TX and setting hold timeout is done in per packet basis in the 
+	  "esb_payload" structure.
+
+endif # ESB_LITE
+
+if ESB
+
 config ESB_NEVER_DISABLE_TX
 	select EXPERIMENTAL
 	bool "Never disable radio transmission stage"
@@ -148,6 +242,10 @@ config ESB_NEVER_DISABLE_TX
 	  This is applicable only when the packet is not acknowledged. Otherwise,
 	  the radio emitter needs to be turned off to enable the radio receiver.
 	  This reduces delay between consecutive transmissions but consumes more energy.
+
+endif # ESB
+
+if ESB || ESB_LITE
 
 config ESB_FAST_SWITCHING
 	select EXPERIMENTAL
@@ -163,6 +261,10 @@ config ESB_FAST_SWITCHING
 	  Enabling this feature can improve the responsiveness and efficiency of the radio
 	  communication system by reducing the latency.
 
+endif # ESB || ESB_LITE
+
+if ESB
+
 config ESB_FAST_CHANNEL_SWITCHING
 	select EXPERIMENTAL
 	depends on SOC_NRF54H20_CPURAD
@@ -172,8 +274,14 @@ config ESB_FAST_CHANNEL_SWITCHING
 	  Allows the radio channel to be changed in RX radio state
 	  without the need to switch the radio to DISABLE state.
 
+endif # ESB
+
+if ESB || ESB_LITE
+
 module=ESB
 module-str=ESB
 source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 
-endif # NRF_ENHANCED_SHOCKBURST
+endif # ESB || ESB_LITE
+
+endmenu
