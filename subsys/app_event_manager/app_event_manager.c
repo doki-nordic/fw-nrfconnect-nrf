@@ -139,6 +139,10 @@ void __weak app_event_manager_free(void *addr)
 
 static void event_processor_fn(struct k_work *work)
 {
+#if defined(CONFIG_BOARD_NRF54H20DK)
+	NRF_P9->OUTSET = BIT(2);
+#endif
+
 	sys_slist_t events = SYS_SLIST_STATIC_INIT(&events);
 
 	/* Make current event list local. */
@@ -146,6 +150,9 @@ static void event_processor_fn(struct k_work *work)
 
 	if (sys_slist_is_empty(&eventq)) {
 		k_spin_unlock(&lock, key);
+#if defined(CONFIG_BOARD_NRF54H20DK)
+		NRF_P9->OUTCLR = BIT(2);
+#endif
 		return;
 	}
 
@@ -202,6 +209,9 @@ static void event_processor_fn(struct k_work *work)
 
 		app_event_manager_free(aeh);
 	}
+#if defined(CONFIG_BOARD_NRF54H20DK)
+	NRF_P9->OUTCLR = BIT(2);
+#endif
 }
 
 void _event_submit(struct app_event_header *aeh)
